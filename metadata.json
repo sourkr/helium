@@ -1,0 +1,6 @@
+{
+  "name": "Voxelvale",
+  "description": "An interactive 3D voxel sandbox game with procedural multi-biome terrain generation, dynamic day-night lighting, and block-based building.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
