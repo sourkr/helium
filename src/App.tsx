@@ -10,8 +10,8 @@ import {
 import { TitleOverlay } from './components/TitleOverlay';
 import { WorldManagerModal } from './components/WorldManagerModal';
 import { getDirtTextureUrl } from './game/assetPack';
-import { DEFAULT_HOTBAR, TerrainPreset, TimePreset } from './game/blocks';
-import { EngineSettings, GamePhase, HudSnapshot, VoxelEngine } from './game/engine';
+import { DEFAULT_HOTBAR, TerrainPreset, TimePreset } from './shared/blocks';
+import { EngineSettings, GamePhase, HudSnapshot, GameClient } from './client/GameClient';
 import {
   bootstrapOpfsWorlds,
   createOpfsWorld,
@@ -28,7 +28,7 @@ import {
   GameMode,
   InventorySlot,
   ItemType,
-} from './game/survival';
+} from './shared/survival';
 
 const INITIAL_HUD: HudSnapshot = {
   mode: 'survival',
@@ -110,7 +110,7 @@ interface ActiveWorldInfo {
 
 export default function App() {
   const canvasMountRef = useRef<HTMLDivElement | null>(null);
-  const engineRef = useRef<VoxelEngine | null>(null);
+  const engineRef = useRef<GameClient | null>(null);
 
   const [phase, setPhase] = useState<GamePhase>('title');
   const [hud, setHud] = useState<HudSnapshot>(INITIAL_HUD);
@@ -147,7 +147,7 @@ export default function App() {
     if (!container) return;
     let cancelled = false;
 
-    const engine = new VoxelEngine(container, {
+    const engine = new GameClient(container, {
       onHudUpdate: (snapshot) => setHud(snapshot),
       onInventoryChange: (nextMode, nextCreative, nextSurvival, nextGrid, nextSlot) => {
         setMode(nextMode);
@@ -478,7 +478,7 @@ export default function App() {
       <div
         ref={canvasMountRef}
         className="w-full h-full"
-        aria-label="Voxelvale 3D Voxel World"
+        aria-label="Helium 3D Voxel World"
       />
 
       {/* WebGL Context Lost Fallback */}
@@ -524,7 +524,6 @@ export default function App() {
           muted={settings.muted}
           showFps={settings.showFps}
           onSelectSlot={handleSelectSlot}
-          onOpenInventory={() => engineRef.current?.setPhase('inventory')}
           onOpenPause={() => engineRef.current?.setPhase('paused')}
           onToggleMute={handleToggleMute}
           onToggleFly={handleToggleFly}

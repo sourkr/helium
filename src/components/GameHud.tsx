@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Backpack, Feather, Grid2x2, Pause, Volume2, VolumeX } from 'lucide-react';
+import { Feather, Pause, Volume2, VolumeX } from 'lucide-react';
 import { getWaterOverlayTextureUrl } from '../game/assetPack';
-import { BLOCK_DEFS, BlockType } from '../game/blocks';
-import { HudSnapshot } from '../game/engine';
+import {
+  GUI_FOOD_TEXTURES,
+  GUI_HEART_TEXTURES,
+  GUI_HOTBAR_SELECTION_TEXTURE_URL,
+} from '../game/guiAssets';
+import { BLOCK_DEFS, BlockType } from '../shared/blocks';
+import { HudSnapshot } from '../client/GameClient';
 import {
   GameMode,
   getDurabilityBarColor,
@@ -11,7 +16,7 @@ import {
   InventorySlot,
   ITEM_DEFS,
   ItemType,
-} from '../game/survival';
+} from '../shared/survival';
 
 interface GameHudProps {
   hud: HudSnapshot;
@@ -23,7 +28,6 @@ interface GameHudProps {
   muted: boolean;
   showFps?: boolean;
   onSelectSlot: (slot: number) => void;
-  onOpenInventory: () => void;
   onOpenPause: () => void;
   onToggleMute: () => void;
   onToggleFly: () => void;
@@ -36,7 +40,7 @@ function getTimeLabel(t: number): string {
   return 'Night';
 }
 
-const HeartIcon: React.FC<{ fill: 'full' | 'half' | 'empty' }> = ({ fill }) => (
+const HeartSvgIcon: React.FC<{ fill: 'full' | 'half' | 'empty' }> = ({ fill }) => (
   <svg width="15" height="14" viewBox="0 0 15 14" fill="none" aria-hidden="true">
     <path
       d="M7.5 12.8L6.45 11.85C2.7 8.45 0.5 6.45 0.5 3.95C0.5 1.95 2.05 0.5 4.05 0.5C5.2 0.5 6.3 1.05 7.05 1.9L7.5 2.45L7.95 1.9C8.7 1.05 9.8 0.5 10.95 0.5C12.95 0.5 14.5 1.95 14.5 3.95C14.5 6.45 12.3 8.45 8.55 11.85L7.5 12.8Z"
@@ -59,7 +63,23 @@ const HeartIcon: React.FC<{ fill: 'full' | 'half' | 'empty' }> = ({ fill }) => (
   </svg>
 );
 
-const HungerIcon: React.FC<{ fill: 'full' | 'half' | 'empty' }> = ({ fill }) => (
+const HEART_TEXTURES_READY = Boolean(
+  GUI_HEART_TEXTURES.containerUrl && GUI_HEART_TEXTURES.fullUrl && GUI_HEART_TEXTURES.halfUrl,
+);
+
+const HOTBAR_SELECTION_READY = Boolean(GUI_HOTBAR_SELECTION_TEXTURE_URL);
+
+const FOOD_TEXTURES_READY = Boolean(
+  GUI_FOOD_TEXTURES.emptyUrl && GUI_FOOD_TEXTURES.fullUrl && GUI_FOOD_TEXTURES.halfUrl,
+);
+
+/** Uses the supplied 9x9 HUD heart sprites, falling back to inline SVG if unavailable. */
+const HeartIcon: React.FC<{ fill: 'full' | 'half' | 'empty' }> = ({ fill }) => {
+  if (!HEART_TEXTURES_READY) return <HeartSvgIcon fill={fill} />;
+  return <span className={`mc-heart mc-heart--${fill}`} aria-hidden="true" />;
+};
+
+const HungerSvgIcon: React.FC<{ fill: 'full' | 'half' | 'empty' }> = ({ fill }) => (
   <svg width="15" height="14" viewBox="0 0 15 14" fill="none" aria-hidden="true">
     <path
       d="M9.6 1.2C11.9 1.2 13.7 3 13.7 5.3C13.7 7.6 11.9 9.4 9.6 9.4C8.8 9.4 8 9.1 7.4 8.7L3.4 12.7C2.9 13.2 2.1 13.2 1.6 12.7C1.1 12.2 1.1 11.4 1.6 10.9L5.6 6.9C5.2 6.3 5 5.6 5 4.8C5 2.8 7 1.2 9.6 1.2Z"
@@ -79,6 +99,12 @@ const HungerIcon: React.FC<{ fill: 'full' | 'half' | 'empty' }> = ({ fill }) => 
     )}
   </svg>
 );
+
+/** Uses the supplied 9x9 food sprites, falling back to inline SVG if unavailable. */
+const HungerIcon: React.FC<{ fill: 'full' | 'half' | 'empty' }> = ({ fill }) => {
+  if (!FOOD_TEXTURES_READY) return <HungerSvgIcon fill={fill} />;
+  return <span className={`mc-food mc-food--${fill}`} aria-hidden="true" />;
+};
 
 const BubbleIcon: React.FC<{ filled: boolean }> = ({ filled }) => (
   <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
@@ -105,7 +131,6 @@ export const GameHud: React.FC<GameHudProps> = ({
   muted,
   showFps = true,
   onSelectSlot,
-  onOpenInventory,
   onOpenPause,
   onToggleMute,
   onToggleFly,
@@ -307,7 +332,7 @@ export const GameHud: React.FC<GameHudProps> = ({
 
         {/* Survival Vitals Row (Hearts, Oxygen, Hunger) docked cleanly over Hotbar */}
         {mode === 'survival' && (
-          <div className="w-full max-w-[508px] px-1 flex flex-col gap-1">
+          <div className="mc-hotbar-vitals px-1 flex flex-col gap-1">
             {showOxygen && (
               <div className="flex justify-end gap-0.5">
                 {Array.from({ length: 10 }, (_, i) => (
@@ -340,87 +365,77 @@ export const GameHud: React.FC<GameHudProps> = ({
           </div>
         )}
 
-        {/* Classic 9-Slot Hotbar + Inventory/Craft Button */}
-        <div className="pointer-events-auto flex items-center gap-1 p-1.5 rounded-lg bg-[#141A20]/90 border border-white/15 shadow-[0_8px_28px_rgba(0,0,0,0.5)]">
-          {Array.from({ length: HOTBAR_SIZE }, (_, idx) => {
-            const isActive = idx === activeSlot;
-            const survivalSlot = mode === 'survival' ? survivalSlots[idx] ?? null : null;
-            const slotItem =
-              mode === 'creative'
-                ? (creativeHotbar[idx] as number)
-                : survivalSlot?.item ?? null;
-            const count = survivalSlot?.count ?? 0;
-            const dur = getSlotDurability(survivalSlot);
-            const iconSrc = slotItem !== null ? itemIcons[slotItem] : undefined;
-            const name =
-              slotItem !== null
-                ? ITEM_DEFS[slotItem as ItemType]?.name ??
-                  BLOCK_DEFS[slotItem as unknown as BlockType]?.name
-                : 'Empty';
-            const titleText = dur
-              ? `${idx + 1}: ${name} (${dur.current}/${dur.max})`
-              : `${idx + 1}: ${name ?? 'Empty'}`;
+        {/* Classic 9-Slot Hotbar */}
+        <div className="pointer-events-auto">
+          <div className="mc-hotbar">
+            {Array.from({ length: HOTBAR_SIZE }, (_, idx) => {
+              const isActive = idx === activeSlot;
+              const survivalSlot = mode === 'survival' ? survivalSlots[idx] ?? null : null;
+              const slotItem =
+                mode === 'creative'
+                  ? (creativeHotbar[idx] as number)
+                  : survivalSlot?.item ?? null;
+              const count = survivalSlot?.count ?? 0;
+              const dur = getSlotDurability(survivalSlot);
+              const iconSrc = slotItem !== null ? itemIcons[slotItem] : undefined;
+              const name =
+                slotItem !== null
+                  ? ITEM_DEFS[slotItem as ItemType]?.name ??
+                    BLOCK_DEFS[slotItem as unknown as BlockType]?.name
+                  : 'Empty';
+              const titleText = dur
+                ? `${idx + 1}: ${name} (${dur.current}/${dur.max})`
+                : `${idx + 1}: ${name ?? 'Empty'}`;
 
-            return (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => onSelectSlot(idx)}
-                title={titleText}
-                className={`relative w-11 h-11 sm:w-12 sm:h-12 rounded-md flex items-center justify-center transition-transform duration-100 cursor-pointer ${
-                  isActive
-                    ? 'bg-[#2C3640] ring-2 ring-[#E8DFC8] -translate-y-0.5'
-                    : 'bg-[#1B222A] hover:bg-[#242D37] border border-white/8'
-                }`}
-              >
-                <span className="absolute top-0.5 left-1 text-[10px] font-mono-num text-stone-400 leading-none">
-                  {idx + 1}
-                </span>
-
-                {iconSrc ? (
-                  <img
-                    src={iconSrc}
-                    alt={name ?? 'Item'}
-                    className="w-8 h-8 sm:w-9 sm:h-9 pixelated pointer-events-none"
-                    draggable={false}
-                  />
-                ) : null}
-
-                {dur && dur.current < dur.max && (
-                  <div className="absolute bottom-1 left-1.5 right-1.5 h-[3px] bg-[#0B0F14] pointer-events-none">
-                    <div
-                      className="h-full"
-                      style={{
-                        width: `${Math.max(5, Math.round(dur.ratio * 100))}%`,
-                        backgroundColor: getDurabilityBarColor(dur.ratio),
-                      }}
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => onSelectSlot(idx)}
+                  title={titleText}
+                  className={`mc-hotbar-slot flex items-center justify-center transition-transform duration-100 cursor-pointer ${
+                    isActive
+                      ? `${
+                          HOTBAR_SELECTION_READY
+                            ? 'mc-hotbar-slot--active'
+                            : 'ring-2 ring-inset ring-[#E8DFC8]'
+                        } -translate-y-0.5`
+                      : 'hover:brightness-125'
+                  }`}
+                >
+                  {iconSrc ? (
+                    <img
+                      src={iconSrc}
+                      alt={name ?? 'Item'}
+                      className="w-8 h-8 sm:w-9 sm:h-9 pixelated pointer-events-none"
+                      draggable={false}
                     />
-                  </div>
-                )}
+                  ) : null}
 
-                {mode === 'survival' && count > 1 && (
-                  <span
-                    className="absolute bottom-0.5 right-1 text-[11px] font-mono-num font-bold text-white leading-none"
-                    style={{ textShadow: '0 1px 2px rgba(0,0,0,0.95)' }}
-                  >
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+                  {dur && dur.current < dur.max && (
+                    <div className="absolute bottom-1 left-1.5 right-1.5 h-[3px] bg-[#0B0F14] pointer-events-none">
+                      <div
+                        className="h-full"
+                        style={{
+                          width: `${Math.max(5, Math.round(dur.ratio * 100))}%`,
+                          backgroundColor: getDurabilityBarColor(dur.ratio),
+                        }}
+                      />
+                    </div>
+                  )}
 
-          <div className="w-px h-8 bg-white/15 mx-0.5" aria-hidden="true" />
-
-          <button
-            type="button"
-            onClick={onOpenInventory}
-            title={mode === 'survival' ? 'Backpack & Crafting (E)' : 'All Blocks (E)'}
-            className="w-11 h-11 sm:w-12 sm:h-12 rounded-md bg-[#1B222A] hover:bg-[#27323D] border border-white/10 text-stone-200 flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer"
-          >
-            {mode === 'survival' ? <Backpack className="w-4 h-4" /> : <Grid2x2 className="w-4 h-4" />}
-            <span className="text-[10px] font-mono-num text-stone-400 leading-none">E</span>
-          </button>
+                  {mode === 'survival' && count > 1 && (
+                    <span
+                      className="absolute bottom-0.5 right-1 text-[11px] font-mono-num font-bold text-white leading-none"
+                      style={{ textShadow: '0 1px 2px rgba(0,0,0,0.95)' }}
+                    >
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

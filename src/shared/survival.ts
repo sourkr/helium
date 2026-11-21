@@ -3,7 +3,7 @@ import { BLOCK_DEFS, BlockType } from './blocks';
 export type GameMode = 'survival' | 'creative';
 
 export enum ItemType {
-  // Block items map 1:1 with BlockType numeric values (1..22)
+  // Block items map 1:1 with BlockType numeric values
   Grass = BlockType.Grass,
   Dirt = BlockType.Dirt,
   Stone = BlockType.Stone,
@@ -17,10 +17,14 @@ export enum ItemType {
   Glass = BlockType.Glass,
   Snow = BlockType.Snow,
   BirchLog = BlockType.BirchLog,
+  BirchPlanks = BlockType.BirchPlanks,
   BirchLeaves = BlockType.BirchLeaves,
+  Clay = BlockType.Clay,
   CoalOre = BlockType.CoalOre,
   IronOre = BlockType.IronOre,
+  GoldOre = BlockType.GoldOre,
   GoldBlock = BlockType.GoldBlock,
+  RedstoneOre = BlockType.RedstoneOre,
   DarkSlate = BlockType.DarkSlate,
   Terracotta = BlockType.Terracotta,
   CraftingTable = BlockType.CraftingTable,
@@ -39,6 +43,9 @@ export enum ItemType {
   RawMutton = 104,
   CookedMutton = 105,
   IronIngot = 106,
+  RawGold = 107,
+  GoldIngot = 108,
+  Redstone = 109,
   WoodPickaxe = 110,
   StonePickaxe = 111,
   IronPickaxe = 112,
@@ -48,13 +55,25 @@ export enum ItemType {
   StoneSword = 116,
   IronSword = 117,
   IronAxe = 118,
+  WoodShovel = 119,
   Bucket = 120,
   WaterBucket = 121,
   GlassBottle = 122,
   WaterBottle = 123,
+  StoneShovel = 124,
+  IronShovel = 125,
+  Clock = 126,
+  Compass = 127,
+  GoldPickaxe = 128,
+  GoldAxe = 129,
+  GoldShovel = 130,
+  GoldSword = 131,
+  LavaBucket = 132,
+  ClayBall = 133,
+  BrickItem = 134,
 }
 
-export type ToolKind = 'hand' | 'pickaxe' | 'axe' | 'sword';
+export type ToolKind = 'hand' | 'pickaxe' | 'axe' | 'shovel' | 'sword';
 
 export interface ItemDefinition {
   id: ItemType;
@@ -68,7 +87,7 @@ export interface ItemDefinition {
   maxDurability?: number;
   miningSpeed?: number;
   attackDamage?: number;
-  isBucket?: 'empty' | 'water';
+  isBucket?: 'empty' | 'water' | 'lava';
   isBottle?: 'empty' | 'water';
   accentColor: string;
 }
@@ -135,6 +154,24 @@ export const ITEM_DEFS: Record<ItemType, ItemDefinition> = {
     name: 'Iron Ingot',
     maxStack: 64,
     accentColor: '#dce4ed',
+  },
+  [ItemType.RawGold]: {
+    id: ItemType.RawGold,
+    name: 'Raw Gold',
+    maxStack: 64,
+    accentColor: '#d9a62f',
+  },
+  [ItemType.GoldIngot]: {
+    id: ItemType.GoldIngot,
+    name: 'Gold Ingot',
+    maxStack: 64,
+    accentColor: '#f2c84b',
+  },
+  [ItemType.Redstone]: {
+    id: ItemType.Redstone,
+    name: 'Redstone Dust',
+    maxStack: 64,
+    accentColor: '#d43b32',
   },
   [ItemType.Apple]: {
     id: ItemType.Apple,
@@ -259,6 +296,83 @@ export const ITEM_DEFS: Record<ItemType, ItemDefinition> = {
     attackDamage: 9,
     accentColor: '#dfe5ec',
   },
+  [ItemType.WoodShovel]: {
+    id: ItemType.WoodShovel,
+    name: 'Wood Shovel',
+    maxStack: 1,
+    toolKind: 'shovel',
+    toolTier: 1,
+    maxDurability: 59,
+    miningSpeed: 3.2,
+    attackDamage: 3,
+    accentColor: '#be8e56',
+  },
+  [ItemType.StoneShovel]: {
+    id: ItemType.StoneShovel,
+    name: 'Stone Shovel',
+    maxStack: 1,
+    toolKind: 'shovel',
+    toolTier: 2,
+    maxDurability: 131,
+    miningSpeed: 5.2,
+    attackDamage: 4,
+    accentColor: '#959ca6',
+  },
+  [ItemType.IronShovel]: {
+    id: ItemType.IronShovel,
+    name: 'Iron Shovel',
+    maxStack: 1,
+    toolKind: 'shovel',
+    toolTier: 3,
+    maxDurability: 250,
+    miningSpeed: 8.0,
+    attackDamage: 5,
+    accentColor: '#dfe5ec',
+  },
+  [ItemType.GoldPickaxe]: {
+    id: ItemType.GoldPickaxe,
+    name: 'Gold Pickaxe',
+    maxStack: 1,
+    toolKind: 'pickaxe',
+    toolTier: 2,
+    maxDurability: 32,
+    miningSpeed: 9.0,
+    attackDamage: 3,
+    accentColor: '#e5b93b',
+  },
+  [ItemType.GoldAxe]: {
+    id: ItemType.GoldAxe,
+    name: 'Gold Axe',
+    maxStack: 1,
+    toolKind: 'axe',
+    toolTier: 2,
+    maxDurability: 32,
+    miningSpeed: 9.5,
+    attackDamage: 5,
+    accentColor: '#e5b93b',
+  },
+  [ItemType.GoldShovel]: {
+    id: ItemType.GoldShovel,
+    name: 'Gold Shovel',
+    maxStack: 1,
+    toolKind: 'shovel',
+    toolTier: 2,
+    maxDurability: 32,
+    miningSpeed: 11.0,
+    attackDamage: 3,
+    accentColor: '#e5b93b',
+  },
+  [ItemType.GoldSword]: {
+    id: ItemType.GoldSword,
+    name: 'Gold Sword',
+    maxStack: 1,
+    toolKind: 'sword',
+    toolTier: 2,
+    maxDurability: 32,
+    miningSpeed: 2.4,
+    attackDamage: 5,
+    accentColor: '#e5b93b',
+  },
   [ItemType.Bucket]: {
     id: ItemType.Bucket,
     name: 'Iron Bucket',
@@ -272,6 +386,25 @@ export const ITEM_DEFS: Record<ItemType, ItemDefinition> = {
     maxStack: 1,
     isBucket: 'water',
     accentColor: '#3693e6',
+  },
+  [ItemType.LavaBucket]: {
+    id: ItemType.LavaBucket,
+    name: 'Lava Bucket',
+    maxStack: 1,
+    isBucket: 'lava',
+    accentColor: '#ff6a1e',
+  },
+  [ItemType.ClayBall]: {
+    id: ItemType.ClayBall,
+    name: 'Clay Ball',
+    maxStack: 64,
+    accentColor: '#c3c9d2',
+  },
+  [ItemType.BrickItem]: {
+    id: ItemType.BrickItem,
+    name: 'Brick',
+    maxStack: 64,
+    accentColor: '#9f4a3c',
   },
   [ItemType.GlassBottle]: {
     id: ItemType.GlassBottle,
@@ -289,6 +422,18 @@ export const ITEM_DEFS: Record<ItemType, ItemDefinition> = {
     isBottle: 'water',
     accentColor: '#385dc6',
   },
+  [ItemType.Clock]: {
+    id: ItemType.Clock,
+    name: 'Clock',
+    maxStack: 1,
+    accentColor: '#d8b64e',
+  },
+  [ItemType.Compass]: {
+    id: ItemType.Compass,
+    name: 'Compass',
+    maxStack: 1,
+    accentColor: '#b72b22',
+  },
 };
 
 export interface BlockMiningSpec {
@@ -304,17 +449,19 @@ export function getBlockMiningSpec(block: BlockType): BlockMiningSpec {
       return { baseTime: 0.05, preferredTool: 'hand' };
     case BlockType.OakLeaves:
     case BlockType.BirchLeaves:
-    case BlockType.Snow:
       return { baseTime: 0.25, preferredTool: 'hand' };
+    case BlockType.Snow:
+      return { baseTime: 0.25, preferredTool: 'shovel' };
     case BlockType.Glass:
       return { baseTime: 0.3, preferredTool: 'pickaxe' };
     case BlockType.Grass:
     case BlockType.Dirt:
     case BlockType.Sand:
-      return { baseTime: 0.42, preferredTool: 'hand' };
+      return { baseTime: 0.42, preferredTool: 'shovel' };
     case BlockType.OakLog:
     case BlockType.BirchLog:
     case BlockType.OakPlanks:
+    case BlockType.BirchPlanks:
     case BlockType.CraftingTable:
     case BlockType.OakDoorBottom:
     case BlockType.OakDoorTop:
@@ -328,6 +475,8 @@ export function getBlockMiningSpec(block: BlockType): BlockMiningSpec {
     case BlockType.Sandstone:
     case BlockType.Terracotta:
       return { baseTime: 1.45, preferredTool: 'pickaxe' };
+    case BlockType.Clay:
+      return { baseTime: 0.95, preferredTool: 'shovel' };
     case BlockType.Stone:
     case BlockType.Cobblestone:
     case BlockType.Brick:
@@ -340,6 +489,9 @@ export function getBlockMiningSpec(block: BlockType): BlockMiningSpec {
     case BlockType.IronOre:
     case BlockType.GoldBlock:
       return { baseTime: 2.8, preferredTool: 'pickaxe' };
+    case BlockType.GoldOre:
+    case BlockType.RedstoneOre:
+      return { baseTime: 3.1, preferredTool: 'pickaxe' };
     default:
       return { baseTime: 0.7, preferredTool: 'hand' };
   }
@@ -365,6 +517,14 @@ export function getBlockDrop(block: BlockType): { item: ItemType; count: number 
       return { item: ItemType.Coal, count: 1 };
     case BlockType.IronOre:
       return { item: ItemType.RawIron, count: 1 };
+    case BlockType.GoldOre:
+      return { item: ItemType.RawGold, count: 1 };
+    case BlockType.RedstoneOre:
+      return { item: ItemType.Redstone, count: 2 + Math.floor(Math.random() * 2) };
+    case BlockType.Brick:
+      return { item: ItemType.BrickItem, count: 4 };
+    case BlockType.Clay:
+      return { item: ItemType.ClayBall, count: 4 };
     case BlockType.OakLeaves:
     case BlockType.BirchLeaves:
       return Math.random() < 0.24 ? { item: ItemType.Apple, count: 1 } : null;
@@ -382,6 +542,7 @@ export function getBlockDrop(block: BlockType): { item: ItemType; count: number 
     case BlockType.TallGrassBottom:
     case BlockType.TallGrassTop:
     case BlockType.Water:
+    case BlockType.Lava:
     case BlockType.Air:
     case BlockType.Bedrock:
       return null;
@@ -405,8 +566,8 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
   },
   {
     id: 'planks_birch',
-    name: 'Planks from Birch (×4)',
-    output: { item: ItemType.OakPlanks, count: 4 },
+    name: 'Birch Planks (×4)',
+    output: { item: ItemType.BirchPlanks, count: 4 },
     ingredients: [{ item: ItemType.BirchLog, count: 1 }],
     category: 'Materials',
     shapeless: true,
@@ -480,14 +641,29 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
   },
   {
     id: 'brick_kiln',
-    name: 'Red Brick (×4)',
-    output: { item: ItemType.Brick, count: 4 },
-    ingredients: [
-      { item: ItemType.Dirt, count: 3 },
-      { item: ItemType.Coal, count: 1 },
-    ],
+    name: 'Brick (×4)',
+    output: { item: ItemType.BrickItem, count: 4 },
+    ingredients: [{ item: ItemType.ClayBall, count: 4 }],
     category: 'Materials',
     shapeless: true,
+  },
+  {
+    id: 'bricks_block',
+    name: 'Brick Block',
+    output: { item: ItemType.Brick, count: 1 },
+    ingredients: [{ item: ItemType.BrickItem, count: 4 }],
+    category: 'Materials',
+    pattern: ['BB', 'BB'],
+    key: { B: ItemType.BrickItem },
+  },
+  {
+    id: 'clay_block',
+    name: 'Clay',
+    output: { item: ItemType.Clay, count: 1 },
+    ingredients: [{ item: ItemType.ClayBall, count: 4 }],
+    category: 'Materials',
+    pattern: ['CC', 'CC'],
+    key: { C: ItemType.ClayBall },
   },
   {
     id: 'terracotta_mix',
@@ -633,6 +809,90 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
     pattern: ['I', 'I', 'S'],
     key: { I: ItemType.IronIngot, S: ItemType.Stick },
   },
+  {
+    id: 'wood_shovel',
+    name: 'Wood Shovel',
+    output: { item: ItemType.WoodShovel, count: 1 },
+    ingredients: [
+      { item: ItemType.OakPlanks, count: 2 },
+      { item: ItemType.Stick, count: 2 },
+    ],
+    category: 'Tools',
+    pattern: ['P', 'S', 'S'],
+    key: { P: ItemType.OakPlanks, S: ItemType.Stick },
+  },
+  {
+    id: 'stone_shovel',
+    name: 'Stone Shovel',
+    output: { item: ItemType.StoneShovel, count: 1 },
+    ingredients: [
+      { item: ItemType.Cobblestone, count: 2 },
+      { item: ItemType.Stick, count: 2 },
+    ],
+    category: 'Tools',
+    pattern: ['C', 'S', 'S'],
+    key: { C: ItemType.Cobblestone, S: ItemType.Stick },
+  },
+  {
+    id: 'iron_shovel',
+    name: 'Iron Shovel',
+    output: { item: ItemType.IronShovel, count: 1 },
+    ingredients: [
+      { item: ItemType.IronIngot, count: 2 },
+      { item: ItemType.Stick, count: 2 },
+    ],
+    category: 'Tools',
+    pattern: ['I', 'S', 'S'],
+    key: { I: ItemType.IronIngot, S: ItemType.Stick },
+  },
+  {
+    id: 'gold_pickaxe',
+    name: 'Gold Pickaxe',
+    output: { item: ItemType.GoldPickaxe, count: 1 },
+    ingredients: [
+      { item: ItemType.GoldIngot, count: 3 },
+      { item: ItemType.Stick, count: 2 },
+    ],
+    category: 'Tools',
+    pattern: ['GGG', '.S.', '.S.'],
+    key: { G: ItemType.GoldIngot, S: ItemType.Stick },
+  },
+  {
+    id: 'gold_axe',
+    name: 'Gold Axe',
+    output: { item: ItemType.GoldAxe, count: 1 },
+    ingredients: [
+      { item: ItemType.GoldIngot, count: 3 },
+      { item: ItemType.Stick, count: 2 },
+    ],
+    category: 'Tools',
+    pattern: ['GG.', 'GS.', '.S.'],
+    key: { G: ItemType.GoldIngot, S: ItemType.Stick },
+  },
+  {
+    id: 'gold_shovel',
+    name: 'Gold Shovel',
+    output: { item: ItemType.GoldShovel, count: 1 },
+    ingredients: [
+      { item: ItemType.GoldIngot, count: 2 },
+      { item: ItemType.Stick, count: 2 },
+    ],
+    category: 'Tools',
+    pattern: ['G', 'S', 'S'],
+    key: { G: ItemType.GoldIngot, S: ItemType.Stick },
+  },
+  {
+    id: 'gold_sword',
+    name: 'Gold Sword',
+    output: { item: ItemType.GoldSword, count: 1 },
+    ingredients: [
+      { item: ItemType.GoldIngot, count: 2 },
+      { item: ItemType.Stick, count: 1 },
+    ],
+    category: 'Tools',
+    pattern: ['G', 'G', 'S'],
+    key: { G: ItemType.GoldIngot, S: ItemType.Stick },
+  },
 
   // Food & Utility
   {
@@ -652,6 +912,30 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
     category: 'Food & Utility',
     pattern: ['G.G', '.G.'],
     key: { G: ItemType.Glass },
+  },
+  {
+    id: 'clock',
+    name: 'Clock',
+    output: { item: ItemType.Clock, count: 1 },
+    ingredients: [
+      { item: ItemType.GoldIngot, count: 4 },
+      { item: ItemType.Redstone, count: 1 },
+    ],
+    category: 'Food & Utility',
+    pattern: ['.G.', 'GRG', '.G.'],
+    key: { G: ItemType.GoldIngot, R: ItemType.Redstone },
+  },
+  {
+    id: 'compass',
+    name: 'Compass',
+    output: { item: ItemType.Compass, count: 1 },
+    ingredients: [
+      { item: ItemType.IronIngot, count: 4 },
+      { item: ItemType.Redstone, count: 1 },
+    ],
+    category: 'Food & Utility',
+    pattern: ['.I.', 'IRI', '.I.'],
+    key: { I: ItemType.IronIngot, R: ItemType.Redstone },
   },
   {
     id: 'roast_mutton',
@@ -998,6 +1282,13 @@ export const SMELTING_RECIPES: SmeltingRecipe[] = [
     label: 'Raw Iron → Iron Ingot',
   },
   {
+    id: 'smelt_gold',
+    input: ItemType.RawGold,
+    output: { item: ItemType.GoldIngot, count: 1 },
+    cookSeconds: 6.0,
+    label: 'Raw Gold → Gold Ingot',
+  },
+  {
     id: 'smelt_mutton',
     input: ItemType.RawMutton,
     output: { item: ItemType.CookedMutton, count: 1 },
@@ -1020,10 +1311,10 @@ export const SMELTING_RECIPES: SmeltingRecipe[] = [
   },
   {
     id: 'smelt_brick',
-    input: ItemType.Dirt,
-    output: { item: ItemType.Brick, count: 1 },
+    input: ItemType.ClayBall,
+    output: { item: ItemType.BrickItem, count: 1 },
     cookSeconds: 4.0,
-    label: 'Dirt → Red Brick',
+    label: 'Clay Ball → Brick',
   },
   {
     id: 'smelt_charcoal_oak',
@@ -1043,9 +1334,11 @@ export const SMELTING_RECIPES: SmeltingRecipe[] = [
 
 export const FUEL_BURN_SECONDS: Partial<Record<ItemType, number>> = {
   [ItemType.Coal]: 40,
+  [ItemType.LavaBucket]: 120,
   [ItemType.OakLog]: 15,
   [ItemType.BirchLog]: 15,
   [ItemType.OakPlanks]: 12,
+  [ItemType.BirchPlanks]: 12,
   [ItemType.CraftingTable]: 12,
   [ItemType.OakDoor]: 12,
   [ItemType.WoodPickaxe]: 10,
@@ -1209,6 +1502,121 @@ export function createSurvivalItemIcons(): Record<number, string> {
     { '#': '#343b45', a: '#7e8896', b: '#a5b0bf', c: '#d8e0eb', l: '#f4f8fc' },
   );
 
+  // Raw Gold
+  icons[ItemType.RawGold] = drawGrid(
+    [
+      '................',
+      '................',
+      '.....######.....',
+      '...##aaaabb#....',
+      '..#abbbbbccb#...',
+      '..#abbbccccb#...',
+      '..#aabbcccb#....',
+      '...#aabbbb#.....',
+      '...##aaaa##.....',
+      '.....####.......',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+    ],
+    { '#': '#6d5014', a: '#a97c1e', b: '#e3b83c', c: '#ffe28a' },
+  );
+
+  // Gold Ingot (smelted gold bar)
+  icons[ItemType.GoldIngot] = drawGrid(
+    [
+      '................',
+      '................',
+      '................',
+      '........####....',
+      '......##llll#...',
+      '.....#llccccb#..',
+      '....#lccccccab#.',
+      '...#lcccccaab#..',
+      '..#lccccaaab#...',
+      '..#cccaaaab#....',
+      '..#aaaaaab#.....',
+      '...#aaabb#......',
+      '....#####.......',
+      '................',
+      '................',
+      '................',
+    ],
+    { '#': '#6b4d12', a: '#a97b1c', b: '#d8a82f', c: '#f5cf55', l: '#fff0a8' },
+  );
+
+  // Redstone Dust
+  icons[ItemType.Redstone] = drawGrid(
+    [
+      '................',
+      '................',
+      '.......##.......',
+      '.....##rr##.....',
+      '....#rrrrrr#....',
+      '...#rrddddrr#...',
+      '...#rdddddrr#...',
+      '...#rddddrrr#...',
+      '....#rrrrrr#....',
+      '.....##rr##.....',
+      '.......##.......',
+      '................',
+      '................',
+      '................',
+      '................',
+      '................',
+    ],
+    { '#': '#4a100d', r: '#b72b22', d: '#f04a3a' },
+  );
+
+  // Clock (procedural fallback; PNG frames override it once assets load)
+  icons[ItemType.Clock] = drawGrid(
+    [
+      '................',
+      '.....######.....',
+      '...##gggggg##...',
+      '..#ggwwwwwwgg#..',
+      '..#gwwwwwwwwg#..',
+      '.#gwwwwwwwddwg#.',
+      '.#gwwwwwwddwwg#.',
+      '.#gwwwwwddwwwg#.',
+      '.#gwwww#wwwwwg#.',
+      '.#gwwww#wwwwwg#.',
+      '.#gwwwwwwwwwgg#.',
+      '..#gwwwwwwwwg#..',
+      '..#ggwwwwwwgg#..',
+      '...##gggggg##...',
+      '.....######.....',
+      '................',
+    ],
+    { '#': '#6b4d12', g: '#d7a93b', w: '#f4f0dc', d: '#9c3a28' },
+  );
+
+  // Compass (procedural fallback; PNG frames override it once assets load)
+  icons[ItemType.Compass] = drawGrid(
+    [
+      '................',
+      '.....######.....',
+      '...##gggggg##...',
+      '..#ggwwwwwwgg#..',
+      '..#gwwwwwwwwg#..',
+      '.#gwwwwwdwwwwg#.',
+      '.#gwwwddddwwwg#.',
+      '.#gwwwwddwwwbg#.',
+      '.#gwwwwdbwwwbg#.',
+      '.#gwwwwdbwwwbg#.',
+      '.#gwwwwwwwwwgg#.',
+      '..#gwwwwwwwwg#..',
+      '..#ggwwwwwwgg#..',
+      '...##gggggg##...',
+      '.....######.....',
+      '................',
+    ],
+    { '#': '#6b4d12', g: '#d7a93b', w: '#f4f0dc', d: '#b72b22', b: '#5a6470' },
+  );
+
   // Apple
   icons[ItemType.Apple] = drawGrid(
     [
@@ -1288,6 +1696,34 @@ export function createSurvivalItemIcons(): Record<number, string> {
   icons[ItemType.StonePickaxe] = makePickaxe('#5f656e', '#9299a3', '#bcc3cc');
   icons[ItemType.IronPickaxe] = makePickaxe('#8f9aa8', '#d2dbe6', '#f4f8fc');
 
+  // Shovel helper
+  const makeShovel = (dark: string, mid: string, light: string) =>
+    drawGrid(
+      [
+        '................',
+        '......####......',
+        '.....#llll#.....',
+        '....#lmmmmm#....',
+        '....#mmmmmmd#...',
+        '.....#mmmmd#....',
+        '.......##s#.....',
+        '.......#s.......',
+        '......#s........',
+        '.....#s.........',
+        '....#s..........',
+        '...#s...........',
+        '..#s............',
+        '..s.............',
+        '................',
+        '................',
+      ],
+      { '#': '#1f2329', d: dark, m: mid, l: light, s: '#b07e46' },
+    );
+
+  icons[ItemType.WoodShovel] = makeShovel('#7a532b', '#b8854c', '#d6a66b');
+  icons[ItemType.StoneShovel] = makeShovel('#5f656e', '#9299a3', '#bcc3cc');
+  icons[ItemType.IronShovel] = makeShovel('#8f9aa8', '#d2dbe6', '#f4f8fc');
+
   // Axe helper
   const makeAxe = (dark: string, mid: string, light: string) =>
     drawGrid(
@@ -1344,6 +1780,12 @@ export function createSurvivalItemIcons(): Record<number, string> {
   icons[ItemType.StoneSword] = makeSword('#5f656e', '#9299a3', '#bcc3cc');
   icons[ItemType.IronSword] = makeSword('#8f9aa8', '#d2dbe6', '#f4f8fc');
 
+  // Gold tools (procedural fallbacks; /assets item textures override them once loaded)
+  icons[ItemType.GoldPickaxe] = makePickaxe('#a8781f', '#e5b93b', '#ffe58a');
+  icons[ItemType.GoldAxe] = makeAxe('#a8781f', '#e5b93b', '#ffe58a');
+  icons[ItemType.GoldShovel] = makeShovel('#a8781f', '#e5b93b', '#ffe58a');
+  icons[ItemType.GoldSword] = makeSword('#a8781f', '#e5b93b', '#ffe58a');
+
   // Iron Bucket (empty)
   icons[ItemType.Bucket] = drawGrid(
     [
@@ -1397,6 +1839,84 @@ export function createSurvivalItemIcons(): Record<number, string> {
       w: '#42a4f5',
       c: '#9ce0ff',
     },
+  );
+
+  // Lava Bucket (filled with glowing molten lava)
+  icons[ItemType.LavaBucket] = drawGrid(
+    [
+      '................',
+      '.....######.....',
+      '....#hhhhhh#....',
+      '...#h......h#...',
+      '..#ll######ll#..',
+      '..#loooooooll#..',
+      '..#lyorrrroyl#..',
+      '...#lmmmmmml#...',
+      '...#lmmmmmml#...',
+      '...#lmmmmmml#...',
+      '....#lmmmml#....',
+      '....#lmmmml#....',
+      '....#ddmmdd#....',
+      '.....######.....',
+      '................',
+      '................',
+    ],
+    {
+      '#': '#222830',
+      h: '#7e8896',
+      l: '#e4ebf2',
+      m: '#b4bfcc',
+      d: '#6c7785',
+      o: '#e85a12',
+      r: '#ffb020',
+      y: '#ffe066',
+    },
+  );
+
+  // Clay Ball
+  icons[ItemType.ClayBall] = drawGrid(
+    [
+      '................',
+      '................',
+      '.....######.....',
+      '...##llllll##...',
+      '..#llllllllll#..',
+      '.#llllllllllll#.',
+      '.#llmmmmmmmlll#.',
+      '.#lmmmmmmmmmll#.',
+      '.#lmmmmmmmmmml#.',
+      '.#lmmmmmmmmdll#.',
+      '..#lmmmmmmddl#..',
+      '..#llddddddl#...',
+      '...##dddd##.....',
+      '.....####.......',
+      '................',
+      '................',
+    ],
+    { '#': '#7d838d', l: '#c3c9d2', m: '#d9dde4', d: '#9299a5' },
+  );
+
+  // Brick
+  icons[ItemType.BrickItem] = drawGrid(
+    [
+      '................',
+      '................',
+      '..############..',
+      '..#gggggggggg#..',
+      '..#gggggggggg#..',
+      '..############..',
+      '..#gggggggggg#..',
+      '..#gggggggggg#..',
+      '..############..',
+      '..#gggggggggg#..',
+      '..#gggggggggg#..',
+      '..############..',
+      '................',
+      '................',
+      '................',
+      '................',
+    ],
+    { '#': '#d8c9b8', g: '#9f4a3c' },
   );
 
   // Glass Bottle (empty)

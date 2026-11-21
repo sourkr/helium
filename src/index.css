@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+:root {
+  --mc-hotbar-slot: 44px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --mc-hotbar-slot: 48px;
+  }
+}
+
 @layer base {
   html,
   body,
@@ -133,6 +143,408 @@
   border-image-width: 2px;
   color: #ffffff;
   outline: none;
+}
+
+/* Minecraft-style 9-slot hotbar (driven by /assets/texture/gui/sprites/hud/hotbar.png) */
+.mc-hotbar-vitals {
+  width: calc(var(--mc-hotbar-slot) * 9);
+  max-width: 100%;
+}
+
+.mc-hotbar {
+  display: grid;
+  grid-template-columns: repeat(9, var(--mc-hotbar-slot));
+  background-color: #141a20;
+  background-image: var(--mc-hotbar);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.5));
+}
+
+.mc-hotbar-slot {
+  position: relative;
+  width: var(--mc-hotbar-slot);
+  height: calc(var(--mc-hotbar-slot) * 22 / 20);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Active-slot frame from /assets/texture/gui/sprites/hud/hotbar_selection.png.
+   The 24x23 frame has a 16x16 transparent center; scaling to slot + 6px lines
+   that center up with the item icon. */
+.mc-hotbar-slot--active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--mc-hotbar-slot) + 6px);
+  height: calc(var(--mc-hotbar-slot) + 4px);
+  transform: translate(-50%, -50%);
+  background-image: var(--mc-hotbar-selection);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.mc-hotbar-slot > img {
+  position: relative;
+  z-index: 1;
+}
+
+.mc-hotbar-slot > div,
+.mc-hotbar-slot > span {
+  z-index: 1;
+}
+
+/* 9x9 HUD hearts from /assets/texture/gui/sprites/hud/heart/, scaled 2x. */
+.mc-heart {
+  display: inline-block;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-image: var(--mc-heart-container);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.55));
+}
+
+.mc-heart--full {
+  background-image: var(--mc-heart-full), var(--mc-heart-container);
+}
+
+.mc-heart--half {
+  background-image: var(--mc-heart-half), var(--mc-heart-container);
+}
+
+/* 9x9 HUD hunger sprites from /assets/texture/gui/sprites/hud/food_*.png, scaled 2x. */
+.mc-food {
+  display: inline-block;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-image: var(--mc-food-empty);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.55));
+}
+
+.mc-food--full {
+  background-image: var(--mc-food-full), var(--mc-food-empty);
+}
+
+.mc-food--half {
+  background-image: var(--mc-food-half), var(--mc-food-empty);
+}
+
+/* Crafting table GUI from /assets/texture/gui/container/crafting_table.png.
+   The full 176x166 GUI is drawn at 2x (352x332), including the 27 inventory
+   slots and 9 hotbar slots along the bottom. */
+.mc-crafting-surface {
+  position: relative;
+  width: 352px;
+  max-width: 100%;
+  aspect-ratio: 352 / 332;
+  margin: 0 auto;
+  background-image: var(--mc-crafting-table);
+  background-position: left top;
+  background-repeat: no-repeat;
+  /* The PNG is 256x256 but its GUI occupies the top-left 176x166. Scale the
+     whole image 512px wide so the GUI renders at a crisp 2x. */
+  background-size: 145.4545% auto;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.4));
+}
+
+.mc-crafting-surface__grid {
+  position: absolute;
+  left: 17.05%;
+  top: 10.24%;
+  width: 29.55%;
+  height: 31.33%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.mc-crafting-cell,
+.mc-crafting-output {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.mc-crafting-cell {
+  width: 100%;
+  height: 100%;
+}
+
+.mc-crafting-cell:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.mc-crafting-output {
+  position: absolute;
+  left: 68.18%;
+  top: 18.67%;
+  width: 48px;
+  height: 48px;
+  max-width: 13.64%;
+  max-height: 14.46%;
+}
+
+.mc-crafting-output:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.mc-crafting-cell--selected {
+  background: rgba(232, 223, 200, 0.18);
+  box-shadow: inset 0 0 0 2px rgba(232, 223, 200, 0.8);
+}
+
+.mc-crafting-inventory {
+  position: absolute;
+  left: 4.55%;
+  width: 90.91%;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  column-gap: 4px;
+}
+
+.mc-crafting-inventory--main {
+  top: 50.6%;
+  height: 31.33%;
+  grid-template-rows: repeat(3, 1fr);
+  row-gap: 4px;
+}
+
+.mc-crafting-inventory--hotbar {
+  top: 85.54%;
+  height: 9.64%;
+  grid-template-rows: repeat(1, 1fr);
+}
+
+/* Recipe book panel from /assets/texture/gui/recipe_book.png.
+   The 147x166 GUI is drawn at 2x (294x332), matching the crafting surface height. */
+.mc-recipe-book {
+  position: relative;
+  width: 294px;
+  max-width: 100%;
+  aspect-ratio: 147 / 166;
+  background-image: var(--mc-recipe-book);
+  background-position: left top;
+  background-repeat: no-repeat;
+  /* Scale the full 256px PNG to 512px so the 147px GUI renders at 294px. */
+  background-size: 174.15% auto;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.4));
+}
+
+.mc-recipe-book__content {
+  position: absolute;
+  left: 18px;
+  right: 16px;
+  top: 18px;
+  bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* Align the search row with the baked-in magnifying glass (texture y=15..26 -> 30..52px). */
+  padding-top: 7px;
+}
+
+.mc-recipe-book__list {
+  scrollbar-width: thin;
+  scrollbar-color: #4a5560 transparent;
+}
+
+/* The magnifying glass is part of recipe_book.png; the input only supplies text
+   to its right, so no separate icon or input box is drawn. */
+.mc-recipe-book__search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+}
+
+.mc-recipe-book__search-input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  /* Texture icon ends at panel x=42; input starts at x=18, so 36px leaves a 12px gap. */
+  padding: 0 4px 0 36px;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: #f4f4f4;
+  font-size: 14px;
+  line-height: 32px;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.85);
+}
+
+.mc-recipe-book__search-input::placeholder {
+  color: #b9b9b9;
+}
+
+.mc-recipe-book__search-input:focus-visible {
+  color: #ffffa0;
+}
+
+/* Buttons inside the recipe book use their own 20x18 sprites. */
+.mc-recipe-book .mc-btn-sm {
+  background-color: #2a592a;
+  border-image-source: var(--mc-recipe-book-btn-normal, var(--mc-btn-normal));
+  border-image-slice: 3 fill;
+  border-image-width: 4px;
+}
+
+.mc-recipe-book .mc-btn-sm:hover:not(:disabled),
+.mc-recipe-book .mc-btn-sm:focus-visible:not(:disabled),
+.mc-recipe-book .mc-btn-sm[data-active="true"]:not(:disabled) {
+  border-image-source: var(--mc-recipe-book-btn-highlighted, var(--mc-btn-highlighted));
+  border-image-slice: 3 fill;
+  color: #ffffa0;
+}
+
+.mc-recipe-book .mc-btn-sm:disabled {
+  border-image-source: var(--mc-recipe-book-btn-normal, var(--mc-btn-normal));
+  color: #b8b8b8;
+  opacity: 0.55;
+}
+
+/* The All tab uses the compass item icon in place of a text label. */
+.mc-recipe-tab-icon {
+  min-width: 28px;
+}
+
+.mc-recipe-tab-icon__img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.85));
+}
+
+.mc-recipe-tab-icon:not([data-active='true']) .mc-recipe-tab-icon__img {
+  opacity: 0.82;
+}
+
+/* Recipe output slots use the 25x25 craftable/uncraftable backgrounds. */
+.mc-recipe-slot {
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.mc-recipe-slot--craftable {
+  background-image: var(--mc-recipe-slot-craftable);
+}
+
+.mc-recipe-slot--many-craftable {
+  background-image: var(--mc-recipe-slot-many-craftable);
+}
+
+.mc-recipe-slot--uncraftable {
+  background-image: var(--mc-recipe-slot-uncraftable);
+}
+
+.mc-recipe-slot--many-uncraftable {
+  background-image: var(--mc-recipe-slot-many-uncraftable);
+}
+
+.mc-recipe-slot--inspected {
+  outline: 2px solid #96d86e;
+  outline-offset: -1px;
+}
+
+/* Recipe book toggle, positioned just left of the crafting grid on the texture. */
+.mc-recipe-book-toggle {
+  position: absolute;
+  /* Centered in the 60px left margin, vertically centered on the 104px crafting grid.
+     Native sprite is 20x18, drawn at the GUI's 2x scale => 40x36. */
+  left: 10px;
+  top: 68px;
+  width: 40px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-style: solid;
+  border-color: transparent;
+  border-width: 2px;
+  border-radius: 0;
+  background-color: #2a592a;
+  border-image-source: var(--mc-recipe-book-btn-normal, var(--mc-btn-normal));
+  border-image-slice: 3 fill;
+  border-image-width: 4px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  color: #ffffa0;
+  cursor: pointer;
+}
+
+.mc-recipe-book-toggle:hover,
+.mc-recipe-book-toggle:focus-visible,
+.mc-recipe-book-toggle[data-active='true'] {
+  border-image-source: var(--mc-recipe-book-btn-highlighted, var(--mc-btn-highlighted));
+}
+
+/* Craftable-only filter toggle, native sprite 26x16 drawn at the GUI's 2x scale. */
+.mc-recipe-filter-toggle {
+  width: 52px;
+  height: 32px;
+  margin-right: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  background-image: var(--mc-recipe-filter-disabled);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  cursor: pointer;
+}
+
+.mc-recipe-filter-toggle[data-active='true'] {
+  background-image: var(--mc-recipe-filter-enabled);
+}
+
+.mc-recipe-filter-toggle:hover:not(:disabled),
+.mc-recipe-filter-toggle:focus-visible:not(:disabled) {
+  background-image: var(--mc-recipe-filter-disabled-highlighted);
+}
+
+.mc-recipe-filter-toggle[data-active='true']:hover:not(:disabled),
+.mc-recipe-filter-toggle[data-active='true']:focus-visible:not(:disabled) {
+  background-image: var(--mc-recipe-filter-enabled-highlighted);
 }
 
 .mc-shadow-text {

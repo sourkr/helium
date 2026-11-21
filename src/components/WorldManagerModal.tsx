@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Dices, Play } from 'lucide-react';
-import { TerrainPreset } from '../game/blocks';
+import { TerrainPreset } from '../shared/blocks';
 import { GUI_SEPARATORS } from '../game/guiAssets';
 import { WorldSummary } from '../game/opfsStorage';
-import { GameMode } from '../game/survival';
+import { GameMode } from '../shared/survival';
 
 interface WorldManagerModalProps {
   worlds: WorldSummary[];

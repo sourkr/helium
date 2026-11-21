@@ -19,6 +19,31 @@ const GUI_ROOT_IMAGES = import.meta.glob(
   { eager: true, import: 'default' },
 ) as Record<string, string>;
 
+const GUI_HUD_IMAGES = import.meta.glob(
+  '/assets/**/gui/sprites/hud/*.{png,webp}',
+  { eager: true, import: 'default' },
+) as Record<string, string>;
+
+const GUI_HEART_IMAGES = import.meta.glob(
+  '/assets/**/gui/sprites/hud/heart/*.{png,webp}',
+  { eager: true, import: 'default' },
+) as Record<string, string>;
+
+const GUI_FOOD_IMAGES = import.meta.glob(
+  '/assets/**/gui/sprites/hud/food_*.{png,webp}',
+  { eager: true, import: 'default' },
+) as Record<string, string>;
+
+const GUI_RECIPE_BOOK_SPRITE_IMAGES = import.meta.glob(
+  '/assets/**/gui/sprites/recipe_book/*.{png,webp}',
+  { eager: true, import: 'default' },
+) as Record<string, string>;
+
+const GUI_CONTAINER_IMAGES = import.meta.glob(
+  '/assets/**/gui/container/*.{png,webp}',
+  { eager: true, import: 'default' },
+) as Record<string, string>;
+
 interface McmetaScaling {
   gui?: {
     scaling?: {
@@ -75,6 +100,88 @@ export interface GuiSeparatorTextures {
   headerUrl: string | null;
   footerUrl: string | null;
 }
+
+export interface GuiHeartTextures {
+  containerUrl: string | null;
+  fullUrl: string | null;
+  halfUrl: string | null;
+}
+
+export interface GuiFoodTextures {
+  emptyUrl: string | null;
+  fullUrl: string | null;
+  halfUrl: string | null;
+}
+
+/** 9x9 health sprites from /assets/texture/gui/sprites/hud/heart/ */
+export const GUI_HEART_TEXTURES: GuiHeartTextures = {
+  containerUrl: findAssetByStem(GUI_HEART_IMAGES, 'container'),
+  fullUrl: findAssetByStem(GUI_HEART_IMAGES, 'full'),
+  halfUrl: findAssetByStem(GUI_HEART_IMAGES, 'half'),
+};
+
+/** 9x9 hunger sprites from /assets/texture/gui/sprites/hud/food_*.png */
+export const GUI_FOOD_TEXTURES: GuiFoodTextures = {
+  emptyUrl: findAssetByStem(GUI_FOOD_IMAGES, 'food_empty'),
+  fullUrl: findAssetByStem(GUI_FOOD_IMAGES, 'food_full'),
+  halfUrl: findAssetByStem(GUI_FOOD_IMAGES, 'food_half'),
+};
+
+/** 182x22 nine-slot hotbar background from /assets/texture/gui/sprites/hud/hotbar.png */
+export const GUI_HOTBAR_TEXTURE_URL: string | null = findAssetByStem(
+  GUI_HUD_IMAGES,
+  'hotbar',
+);
+
+/** 24x23 selection frame from /assets/texture/gui/sprites/hud/hotbar_selection.png */
+export const GUI_HOTBAR_SELECTION_TEXTURE_URL: string | null = findAssetByStem(
+  GUI_HUD_IMAGES,
+  'hotbar_selection',
+);
+
+/** 176x166 vanilla crafting GUI from /assets/texture/gui/container/crafting_table.png */
+export const GUI_CRAFTING_TABLE_TEXTURE_URL: string | null = findAssetByStem(
+  GUI_CONTAINER_IMAGES,
+  'crafting_table',
+);
+
+/** 147x166 recipe book panel from /assets/texture/gui/recipe_book.png */
+export const GUI_RECIPE_BOOK_TEXTURE_URL: string | null = findAssetByStem(
+  GUI_ROOT_IMAGES,
+  'recipe_book',
+);
+
+/** 20x18 recipe book button sprites from /assets/texture/gui/sprites/recipe_book/ */
+export const GUI_RECIPE_BOOK_BUTTON_SPRITES: GuiButtonSprites = {
+  normalUrl: findAssetByStem(GUI_RECIPE_BOOK_SPRITE_IMAGES, 'button'),
+  highlightedUrl: findAssetByStem(GUI_RECIPE_BOOK_SPRITE_IMAGES, 'button_highlighted'),
+  disabledUrl: null,
+  normalSlice: 3,
+  highlightedSlice: 3,
+  disabledSlice: 3,
+};
+
+/** 26x16 recipe book craftable filter toggle textures. */
+export const GUI_RECIPE_FILTER_TEXTURES = {
+  disabledUrl: findAssetByStem(GUI_RECIPE_BOOK_SPRITE_IMAGES, 'filter_disabled'),
+  disabledHighlightedUrl: findAssetByStem(
+    GUI_RECIPE_BOOK_SPRITE_IMAGES,
+    'filter_disabled_highlighted',
+  ),
+  enabledUrl: findAssetByStem(GUI_RECIPE_BOOK_SPRITE_IMAGES, 'filter_enabled'),
+  enabledHighlightedUrl: findAssetByStem(
+    GUI_RECIPE_BOOK_SPRITE_IMAGES,
+    'filter_enabled_highlighted',
+  ),
+};
+
+/** 25x25 recipe book output slot backgrounds from /assets/texture/gui/sprites/recipe_book/. */
+export const GUI_RECIPE_SLOT_TEXTURES = {
+  craftableUrl: findAssetByStem(GUI_RECIPE_BOOK_SPRITE_IMAGES, 'slot_craftable'),
+  manyCraftableUrl: findAssetByStem(GUI_RECIPE_BOOK_SPRITE_IMAGES, 'slot_many_craftable'),
+  uncraftableUrl: findAssetByStem(GUI_RECIPE_BOOK_SPRITE_IMAGES, 'slot_uncraftable'),
+  manyUncraftableUrl: findAssetByStem(GUI_RECIPE_BOOK_SPRITE_IMAGES, 'slot_many_uncraftable'),
+};
 
 export const GUI_BUTTON_SPRITES: GuiButtonSprites = {
   normalUrl: findAssetByStem(GUI_WIDGET_IMAGES, 'button'),
@@ -160,6 +267,99 @@ export function initGuiButtonTheme(): void {
   }
   if (GUI_SEPARATORS.footerUrl) {
     root.style.setProperty('--mc-footer-separator', `url("${GUI_SEPARATORS.footerUrl}")`);
+  }
+  if (GUI_HOTBAR_TEXTURE_URL) {
+    root.style.setProperty('--mc-hotbar', `url("${GUI_HOTBAR_TEXTURE_URL}")`);
+  }
+  if (GUI_HOTBAR_SELECTION_TEXTURE_URL) {
+    root.style.setProperty(
+      '--mc-hotbar-selection',
+      `url("${GUI_HOTBAR_SELECTION_TEXTURE_URL}")`,
+    );
+  }
+  if (GUI_CRAFTING_TABLE_TEXTURE_URL) {
+    root.style.setProperty('--mc-crafting-table', `url("${GUI_CRAFTING_TABLE_TEXTURE_URL}")`);
+  }
+  if (GUI_RECIPE_BOOK_TEXTURE_URL) {
+    root.style.setProperty('--mc-recipe-book', `url("${GUI_RECIPE_BOOK_TEXTURE_URL}")`);
+  }
+  if (GUI_RECIPE_BOOK_BUTTON_SPRITES.normalUrl) {
+    root.style.setProperty(
+      '--mc-recipe-book-btn-normal',
+      `url("${GUI_RECIPE_BOOK_BUTTON_SPRITES.normalUrl}")`,
+    );
+  }
+  if (GUI_RECIPE_BOOK_BUTTON_SPRITES.highlightedUrl) {
+    root.style.setProperty(
+      '--mc-recipe-book-btn-highlighted',
+      `url("${GUI_RECIPE_BOOK_BUTTON_SPRITES.highlightedUrl}")`,
+    );
+  }
+  if (GUI_RECIPE_FILTER_TEXTURES.disabledUrl) {
+    root.style.setProperty(
+      '--mc-recipe-filter-disabled',
+      `url("${GUI_RECIPE_FILTER_TEXTURES.disabledUrl}")`,
+    );
+  }
+  if (GUI_RECIPE_FILTER_TEXTURES.disabledHighlightedUrl) {
+    root.style.setProperty(
+      '--mc-recipe-filter-disabled-highlighted',
+      `url("${GUI_RECIPE_FILTER_TEXTURES.disabledHighlightedUrl}")`,
+    );
+  }
+  if (GUI_RECIPE_FILTER_TEXTURES.enabledUrl) {
+    root.style.setProperty(
+      '--mc-recipe-filter-enabled',
+      `url("${GUI_RECIPE_FILTER_TEXTURES.enabledUrl}")`,
+    );
+  }
+  if (GUI_RECIPE_FILTER_TEXTURES.enabledHighlightedUrl) {
+    root.style.setProperty(
+      '--mc-recipe-filter-enabled-highlighted',
+      `url("${GUI_RECIPE_FILTER_TEXTURES.enabledHighlightedUrl}")`,
+    );
+  }
+  if (GUI_RECIPE_SLOT_TEXTURES.craftableUrl) {
+    root.style.setProperty(
+      '--mc-recipe-slot-craftable',
+      `url("${GUI_RECIPE_SLOT_TEXTURES.craftableUrl}")`,
+    );
+  }
+  if (GUI_RECIPE_SLOT_TEXTURES.manyCraftableUrl) {
+    root.style.setProperty(
+      '--mc-recipe-slot-many-craftable',
+      `url("${GUI_RECIPE_SLOT_TEXTURES.manyCraftableUrl}")`,
+    );
+  }
+  if (GUI_RECIPE_SLOT_TEXTURES.uncraftableUrl) {
+    root.style.setProperty(
+      '--mc-recipe-slot-uncraftable',
+      `url("${GUI_RECIPE_SLOT_TEXTURES.uncraftableUrl}")`,
+    );
+  }
+  if (GUI_RECIPE_SLOT_TEXTURES.manyUncraftableUrl) {
+    root.style.setProperty(
+      '--mc-recipe-slot-many-uncraftable',
+      `url("${GUI_RECIPE_SLOT_TEXTURES.manyUncraftableUrl}")`,
+    );
+  }
+  if (GUI_HEART_TEXTURES.containerUrl) {
+    root.style.setProperty('--mc-heart-container', `url("${GUI_HEART_TEXTURES.containerUrl}")`);
+  }
+  if (GUI_HEART_TEXTURES.fullUrl) {
+    root.style.setProperty('--mc-heart-full', `url("${GUI_HEART_TEXTURES.fullUrl}")`);
+  }
+  if (GUI_HEART_TEXTURES.halfUrl) {
+    root.style.setProperty('--mc-heart-half', `url("${GUI_HEART_TEXTURES.halfUrl}")`);
+  }
+  if (GUI_FOOD_TEXTURES.emptyUrl) {
+    root.style.setProperty('--mc-food-empty', `url("${GUI_FOOD_TEXTURES.emptyUrl}")`);
+  }
+  if (GUI_FOOD_TEXTURES.fullUrl) {
+    root.style.setProperty('--mc-food-full', `url("${GUI_FOOD_TEXTURES.fullUrl}")`);
+  }
+  if (GUI_FOOD_TEXTURES.halfUrl) {
+    root.style.setProperty('--mc-food-half', `url("${GUI_FOOD_TEXTURES.halfUrl}")`);
   }
 }
 
