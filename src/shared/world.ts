@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 import {
   BLOCK_DEFS,
   BlockType,
@@ -10,6 +9,13 @@ import {
   TerrainPreset,
 } from './blocks';
 import { hashInt, SeededNoise } from './noise';
+
+/** Any object exposing x/y/z. Keeps world generation free of THREE/DOM deps. */
+export interface Vec3Like {
+  x: number;
+  y: number;
+  z: number;
+}
 
 export const CHUNK_SIZE = 16;
 export const CHUNK_HEIGHT = 48;
@@ -117,6 +123,35 @@ export class VoxelWorld {
     const key = chunkKey(cx, cz);
     this.chunks.delete(key);
     this.dirtyChunks.delete(key);
+  }
+
+  /** Drop every loaded chunk (used when the client mirror is reset). */
+  public clearChunks(): void {
+    this.chunks.clear();
+    this.dirtyChunks.clear();
+  }
+
+  /**
+   * Install a chunk produced by the authoritative server. Used by the client's
+   * read-only world mirror; no terrain generation is performed here.
+   */
+  public installChunk(cx: number, cz: number, data: Uint8Array): void {
+    const key = chunkKey(cx, cz);
+    this.chunks.set(key, data);
+    this.dirtyChunks.delete(key);
+  }
+
+  /**
+   * Apply a sparse delta to a previously installed chunk. Missing chunks are
+   * ignored so a late/lost delta can never fabricate partial terrain.
+   */
+  public applyChunkDelta(cx: number, cz: number, edits: Array<{ index: number; block: number }>): void {
+    const chunk = this.chunks.get(chunkKey(cx, cz));
+    if (!chunk) return;
+    for (const { index, block } of edits) {
+      if (index >= 0 && index < chunk.length) chunk[index] = block;
+    }
+    this.markChunkDirty(cx, cz);
   }
 
   /**
@@ -261,8 +296,12 @@ export class VoxelWorld {
             } else {
               // Stone with mineral ore veins
               const oreRoll = hashInt(wx, y, wz, this.seed + 55);
-              if (y < 14 && oreRoll > 0.968) {
+              if (y < 10 && oreRoll > 0.988) {
+                block = BlockType.GoldOre;
+              } else if (y < 14 && oreRoll > 0.968) {
                 block = BlockType.IronOre;
+              } else if (y < 16 && oreRoll < 0.018) {
+                block = BlockType.RedstoneOre;
               } else if (y < 20 && oreRoll < 0.042) {
                 block = BlockType.CoalOre;
               } else if (this.preset === 'mesa' && y > height - 8) {
@@ -619,8 +658,8 @@ export class VoxelWorld {
    * Fast, zero-allocation Amanatides & Woo 3D voxel DDA raycaster.
    */
   public raycast(
-    origin: THREE.Vector3,
-    direction: THREE.Vector3,
+    origin: Vec3Like,
+    direction: Vec3Like,
     maxDistance = 6.5,
     includeLiquids = false,
   ): RaycastHit | null {

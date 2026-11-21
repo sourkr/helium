@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { TILE } from './blocks';
-import { ItemType } from './survival';
+import { TILE } from '../shared/blocks';
+import { ItemType } from '../shared/survival';
 import { ATLAS_COLS, TILE_PIXELS } from './textures';
 
 /**
@@ -83,10 +83,14 @@ const BLOCK_TILE_BINDINGS: TileAssetBinding[] = [
     animated: true,
   },
   { tile: TILE.BRICK, names: ['bricks', 'brick'] },
+  { tile: TILE.LAVA_STILL, names: ['lava_still', 'lava'], animated: true },
+  { tile: TILE.LAVA_FLOW, names: ['lava_flow'], animated: true },
+  { tile: TILE.CLAY, names: ['clay'] },
   { tile: TILE.GLASS, names: ['glass'] },
   { tile: TILE.SNOW, names: ['snow', 'snow_block'] },
   { tile: TILE.BIRCH_LOG_SIDE, names: ['birch_log', 'log_birch'] },
   { tile: TILE.BIRCH_LOG_TOP, names: ['birch_log_top', 'log_birch_top'] },
+  { tile: TILE.BIRCH_PLANKS, names: ['birch_planks', 'planks_birch'] },
   {
     tile: TILE.BIRCH_LEAVES,
     names: ['birch_leaves', 'leaves_birch'],
@@ -95,6 +99,8 @@ const BLOCK_TILE_BINDINGS: TileAssetBinding[] = [
   },
   { tile: TILE.COAL_ORE, names: ['coal_ore'] },
   { tile: TILE.IRON_ORE, names: ['iron_ore'] },
+  { tile: TILE.GOLD_ORE, names: ['gold_ore'] },
+  { tile: TILE.REDSTONE_ORE, names: ['redstone_ore'] },
   { tile: TILE.GOLD_BLOCK, names: ['gold_block'] },
   { tile: TILE.DARK_SLATE, names: ['deepslate_tiles', 'deepslate', 'polished_deepslate'] },
   { tile: TILE.TERRACOTTA, names: ['terracotta', 'orange_terracotta', 'red_sandstone'] },
@@ -153,21 +159,36 @@ const ITEM_ASSET_BINDINGS: ItemAssetBinding[] = [
   { item: ItemType.Stick, names: ['stick'] },
   { item: ItemType.Coal, names: ['coal'] },
   { item: ItemType.RawIron, names: ['raw_iron'] },
+  { item: ItemType.RawGold, names: ['raw_gold'] },
   { item: ItemType.IronIngot, names: ['iron_ingot'] },
+  { item: ItemType.GoldIngot, names: ['gold_ingot'] },
+  { item: ItemType.Redstone, names: ['redstone', 'redstone_dust'] },
   { item: ItemType.Apple, names: ['apple'] },
   { item: ItemType.RawMutton, names: ['mutton', 'raw_mutton'] },
   { item: ItemType.CookedMutton, names: ['cooked_mutton'] },
   { item: ItemType.WoodPickaxe, names: ['wooden_pickaxe', 'wood_pickaxe'] },
   { item: ItemType.StonePickaxe, names: ['stone_pickaxe'] },
   { item: ItemType.IronPickaxe, names: ['iron_pickaxe'] },
+  { item: ItemType.GoldPickaxe, names: ['golden_pickaxe', 'gold_pickaxe'] },
   { item: ItemType.WoodAxe, names: ['wooden_axe', 'wood_axe'] },
   { item: ItemType.StoneAxe, names: ['stone_axe'] },
   { item: ItemType.IronAxe, names: ['iron_axe'] },
+  { item: ItemType.GoldAxe, names: ['golden_axe', 'gold_axe'] },
+  { item: ItemType.WoodShovel, names: ['wooden_shovel', 'wood_shovel'] },
+  { item: ItemType.StoneShovel, names: ['stone_shovel'] },
+  { item: ItemType.IronShovel, names: ['iron_shovel'] },
+  { item: ItemType.GoldShovel, names: ['golden_shovel', 'gold_shovel'] },
   { item: ItemType.WoodSword, names: ['wooden_sword', 'wood_sword'] },
   { item: ItemType.StoneSword, names: ['stone_sword'] },
   { item: ItemType.IronSword, names: ['iron_sword'] },
+  { item: ItemType.GoldSword, names: ['golden_sword', 'gold_sword'] },
+  { item: ItemType.Clock, names: ['clock_00', 'clock'] },
+  { item: ItemType.Compass, names: ['compass_00', 'compass'] },
   { item: ItemType.Bucket, names: ['bucket'] },
   { item: ItemType.WaterBucket, names: ['water_bucket'] },
+  { item: ItemType.LavaBucket, names: ['lava_bucket'] },
+  { item: ItemType.ClayBall, names: ['clay_ball'] },
+  { item: ItemType.BrickItem, names: ['brick'] },
   { item: ItemType.GlassBottle, names: ['glass_bottle', 'potion'] },
   {
     item: ItemType.WaterBottle,
@@ -192,23 +213,76 @@ function buildAssetLookup(pathFilter?: (lowerPath: string) => boolean): Map<stri
   return map;
 }
 
-function parseAnimationFrameTimeSec(stem: string, defaultTicks = 2): number {
+/** Item textures whose frame files are named `<prefix>00..NN` (e.g. clock, compass). */
+const ANIMATED_ITEM_PREFIXES: Partial<Record<ItemType, string>> = {
+  [ItemType.Clock]: 'clock_',
+  [ItemType.Compass]: 'compass_',
+};
+
+/**
+ * Discovers ordered frame URLs for animated items. Frames are sorted by their
+ * numeric suffix so the client can drive them from the authoritative time of day.
+ */
+export function discoverAnimatedItemFrames(): Record<number, string[]> {
+  const itemLookup = buildAssetLookup((p) => p.includes('/item/') || p.includes('/items/'));
+  const result: Record<number, string[]> = {};
+  for (const [itemKey, prefix] of Object.entries(ANIMATED_ITEM_PREFIXES)) {
+    const frames = Array.from(itemLookup.entries())
+      .filter(
+        ([stem]) => stem.startsWith(prefix) && /^\d+$/.test(stem.slice(prefix.length)),
+      )
+      .sort(
+        ([a], [b]) => Number(a.slice(prefix.length)) - Number(b.slice(prefix.length)),
+      )
+      .map(([, url]) => url);
+    if (frames.length > 1) result[Number(itemKey)] = frames;
+  }
+  return result;
+}
+
+interface BlockAnimationMeta {
+  frameDurationSec: number;
+  /** Minecraft mcmeta `frames` order; null when the file has no explicit frame list. */
+  frameOrder: number[] | null;
+}
+
+function parseBlockAnimation(
+  stem: string,
+  defaultTicks = 2,
+  frameCount = 0,
+): BlockAnimationMeta {
   const target = stem.toLowerCase();
   for (const [path, raw] of Object.entries(DISCOVERED_BLOCK_MCMETA)) {
     const file = (path.split('/').pop() ?? '').toLowerCase();
     const fileStem = file.replace(/\.png\.mcmeta$/, '').replace(/\.[^.]+$/, '');
     if (fileStem !== target) continue;
     try {
-      const parsed = JSON.parse(raw) as { animation?: { frametime?: number } };
+      const parsed = JSON.parse(raw) as {
+        animation?: {
+          frametime?: number;
+          frames?: Array<number | { index?: number; time?: number }>;
+        };
+      };
       const ticks = parsed.animation?.frametime;
-      if (typeof ticks === 'number' && ticks > 0) {
-        return Math.max(0.05, ticks * 0.05);
+      const frameDurationSec =
+        typeof ticks === 'number' && ticks > 0
+          ? Math.max(0.05, ticks * 0.05)
+          : Math.max(0.05, defaultTicks * 0.05);
+
+      const rawFrames = parsed.animation?.frames;
+      let frameOrder: number[] | null = null;
+      if (Array.isArray(rawFrames) && rawFrames.length > 0 && frameCount > 0) {
+        frameOrder = rawFrames.map((entry) => {
+          const index = typeof entry === 'number' ? entry : entry?.index;
+          return typeof index === 'number' && index >= 0 && index < frameCount ? index : 0;
+        });
       }
+      return { frameDurationSec, frameOrder };
     } catch {
-      // Fallback to default tick duration
+      // Fallback to default tick duration and sequential frames
     }
   }
-  return Math.max(0.05, defaultTicks * 0.05);
+  return { frameDurationSec: Math.max(0.05, defaultTicks * 0.05), frameOrder: null };
 }
 
 export function getDirtTextureUrl(): string | null {
@@ -426,6 +500,7 @@ export async function applyUserAssetsToAtlas(
     destroyStageTextures: THREE.Texture[],
     loadedCount: number,
     animatedTiles: AnimatedAtlasTile[],
+    animatedItemFrames: Record<number, string[]>,
   ) => void,
 ): Promise<void> {
   const blockLookup = buildAssetLookup(
@@ -493,10 +568,17 @@ export async function applyUserAssetsToAtlas(
               ),
             );
           }
+          const animation = parseBlockAnimation(
+            matchedName ?? 'water_still',
+            2,
+            frames.length,
+          );
           animatedTiles.push({
             tile: binding.tile,
-            frames,
-            frameDurationSec: parseAnimationFrameTimeSec(matchedName ?? 'water_still', 2),
+            frames: animation.frameOrder
+              ? animation.frameOrder.map((index) => frames[index] ?? frames[0])
+              : frames,
+            frameDurationSec: animation.frameDurationSec,
           });
         }
       }
@@ -621,6 +703,13 @@ export async function applyUserAssetsToAtlas(
 
   if (loadedCount > 0) {
     atlasTexture.needsUpdate = true;
-    onComplete(itemIconOverrides, itemGeometries, destroyStageTextures, loadedCount, animatedTiles);
+    onComplete(
+      itemIconOverrides,
+      itemGeometries,
+      destroyStageTextures,
+      loadedCount,
+      animatedTiles,
+      discoverAnimatedItemFrames(),
+    );
   }
 }

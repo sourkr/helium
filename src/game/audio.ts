@@ -1,4 +1,4 @@
-import { SoundMaterial } from './blocks';
+import { SoundMaterial } from '../shared/blocks';
 
 /**
  * 100% procedural Web Audio API sound synthesizer for tactile voxel interaction and survival feedback.

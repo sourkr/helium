@@ -10,9 +10,9 @@ import {
   isSolidBlock,
   isTransparentBlock,
   TILE,
-} from './blocks';
+} from '../shared/blocks';
 import { ATLAS_COLS, ATLAS_ROWS } from './textures';
-import { CHUNK_HEIGHT, CHUNK_SIZE, VoxelWorld } from './world';
+import { CHUNK_HEIGHT, CHUNK_SIZE, VoxelWorld } from '../shared/world';
 
 interface FaceDef {
   dir: [number, number, number];

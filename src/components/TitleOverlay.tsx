@@ -80,7 +80,7 @@ export const TitleOverlay: React.FC<TitleOverlayProps> = ({
             className="font-display text-4xl sm:text-5xl font-extrabold tracking-tight text-[#F6F4EC]"
             style={{ textShadow: '0 3px 16px rgba(10,16,22,0.72)' }}
           >
-            VOXELVALE
+            HELIUM
           </h1>
         </div>
         <p className="text-sm sm:text-base text-stone-200/95 max-w-md font-medium drop-shadow-[0_1px_6px_rgba(0,0,0,0.75)]">

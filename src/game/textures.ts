@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { BLOCK_DEFS, BlockType, TILE } from './blocks';
-import { mulberry32 } from './noise';
+import { BLOCK_DEFS, BlockType, TILE } from '../shared/blocks';
+import { mulberry32 } from '../shared/noise';
 
 export const ATLAS_COLS = 8;
-export const ATLAS_ROWS = 6;
+export const ATLAS_ROWS = 7;
 export const TILE_PIXELS = 16;
 
 interface RGB {
@@ -251,6 +251,38 @@ export function createProceduralAtlas(maxAnisotropy: number): ProceduralAtlasRes
     return vary({ r: 98, g: 152, b: 68 }, 8, rand);
   });
 
+  // 50: Birch Planks (pale, warm-toned boards)
+  paintTile(ctx, TILE.BIRCH_PLANKS, (x, y, rand) => {
+    const seam = y % 4 === 0 || (x + Math.floor(y / 4) * 3) % 11 === 0;
+    if (seam) return vary({ r: 150, g: 137, b: 106 }, 7, rand);
+    return vary({ r: 216, g: 207, b: 180 }, 8, rand);
+  });
+
+  // 51: Lava (molten orange with dark cooling crust)
+  paintTile(ctx, TILE.LAVA_STILL, (x, y, rand) => {
+    const crust =
+      (x + Math.floor(y / 3) * 5) % 9 === 0 ||
+      (x * 3 + y * 5) % 17 === 0;
+    if (crust) return vary({ r: 92, g: 32, b: 18 }, 9, rand);
+    const glow = (x * 2 + y * 3) % 7 === 0;
+    return vary(glow ? { r: 255, g: 208, b: 72 } : { r: 226, g: 92, b: 24 }, 14, rand);
+  });
+
+  // 52: Flowing Lava (darker channels with bright moving streaks)
+  paintTile(ctx, TILE.LAVA_FLOW, (x, y, rand) => {
+    const streak = (x + Math.floor(y / 4) * 3) % 6 === 0;
+    const ember = (x * 5 + y * 7) % 19 === 0;
+    if (streak) return vary({ r: 255, g: 174, b: 48 }, 12, rand);
+    if (ember) return vary({ r: 255, g: 224, b: 112 }, 10, rand);
+    return vary({ r: 178, g: 54, b: 18 }, 12, rand);
+  });
+
+  // 53: Clay (pale bluish-gray compacted earth)
+  paintTile(ctx, TILE.CLAY, (x, y, rand) => {
+    const fleck = (x * 7 + y * 11) % 13 === 0;
+    return vary(fleck ? { r: 166, g: 174, b: 186 } : { r: 198, g: 204, b: 214 }, 6, rand);
+  });
+
   // 19: Coal Ore
   paintTile(ctx, TILE.COAL_ORE, (x, y, rand) => {
     const coal =
@@ -271,6 +303,28 @@ export function createProceduralAtlas(maxAnisotropy: number): ProceduralAtlasRes
       (x >= 11 && x <= 13 && y >= 11 && y <= 12);
     if (fleck) return vary({ r: 204, g: 174, b: 144 }, 9, rand);
     return vary({ r: 130, g: 134, b: 140 }, 9, rand);
+  });
+
+  // 48: Gold Ore
+  paintTile(ctx, TILE.GOLD_ORE, (x, y, rand) => {
+    const nugget =
+      (x >= 3 && x <= 5 && y >= 4 && y <= 6) ||
+      (x >= 9 && x <= 12 && y >= 3 && y <= 5) ||
+      (x >= 5 && x <= 8 && y >= 9 && y <= 12) ||
+      (x >= 12 && x <= 13 && y >= 10 && y <= 12);
+    if (nugget) return vary({ r: 237, g: 185, b: 48 }, 10, rand);
+    return vary({ r: 130, g: 134, b: 140 }, 9, rand);
+  });
+
+  // 49: Redstone Ore
+  paintTile(ctx, TILE.REDSTONE_ORE, (x, y, rand) => {
+    const vein =
+      (x >= 4 && x <= 6 && y >= 3 && y <= 5) ||
+      (x >= 10 && x <= 13 && y >= 6 && y <= 8) ||
+      (x >= 5 && x <= 9 && y >= 10 && y <= 12) ||
+      (x === 12 && y === 12);
+    if (vein) return vary({ r: 206, g: 48, b: 39 }, 12, rand);
+    return vary({ r: 118, g: 122, b: 130 }, 9, rand);
   });
 
   // 21: Gilded Gold Block (beveled metallic plate)

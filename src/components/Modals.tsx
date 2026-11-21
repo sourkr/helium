@@ -11,7 +11,6 @@ import {
   Plus,
   RotateCcw,
   Save,
-  Search,
   Shield,
   Skull,
   SlidersHorizontal,
@@ -28,8 +27,8 @@ import {
   BUILDABLE_BLOCKS,
   TerrainPreset,
   TimePreset,
-} from '../game/blocks';
-import { EngineSettings } from '../game/engine';
+} from '../shared/blocks';
+import { EngineSettings } from '../client/GameClient';
 import {
   countItemInInventory,
   CRAFTING_RECIPES,
@@ -49,7 +48,7 @@ import {
   matchCraftingGrid,
   recipeFitsInGridSize,
   SMELTING_RECIPES,
-} from '../game/survival';
+} from '../shared/survival';
 
 interface InventoryModalProps {
   mode: GameMode;
@@ -79,9 +78,24 @@ const CREATIVE_CATEGORIES: Array<'Natural' | 'Wood & Foliage' | 'Masonry' | 'Spe
 
 const CREATIVE_EXTRA_SPECIALTY: ItemType[] = [
   ItemType.WaterBucket,
+  ItemType.LavaBucket,
   ItemType.Bucket,
   ItemType.WaterBottle,
   ItemType.GlassBottle,
+  ItemType.RawGold,
+  ItemType.GoldIngot,
+  ItemType.Redstone,
+  ItemType.WoodShovel,
+  ItemType.StoneShovel,
+  ItemType.IronShovel,
+  ItemType.GoldPickaxe,
+  ItemType.GoldAxe,
+  ItemType.GoldShovel,
+  ItemType.GoldSword,
+  ItemType.ClayBall,
+  ItemType.BrickItem,
+  ItemType.Clock,
+  ItemType.Compass,
 ];
 
 const CRAFT_TABS: Array<'All' | CraftingCategory> = [
@@ -114,6 +128,7 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [onlyCraftable, setOnlyCraftable] = useState(false);
   const [inspectedRecipeId, setInspectedRecipeId] = useState<string | null>(null);
+  const [recipeBookOpen, setRecipeBookOpen] = useState(true);
 
   const cellCount = gridSize * gridSize;
   const matchedGridRecipe = useMemo(
@@ -282,7 +297,7 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
       ? getRecipeGridPreview(inspectedRecipe, gridSize)
       : null;
 
-  const renderSlotButton = (idx: number, showNum?: number) => {
+  const renderSlotButton = (idx: number, showNum?: number, textured = false) => {
     const slot = survivalSlots[idx];
     const def = slot ? ITEM_DEFS[slot.item] : null;
     const dur = getSlotDurability(slot);
@@ -301,13 +316,19 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
               : `${def.name} (${slot?.count})`
             : 'Empty Slot'
         }
-        className={`relative w-11 h-11 rounded-md flex items-center justify-center transition-colors cursor-pointer ${
-          isSelected
-            ? 'bg-[#31404D] ring-2 ring-[#E8DFC8]'
-            : 'bg-[#1D252E] hover:bg-[#26313D] border border-white/10'
-        }`}
+        className={
+          textured
+            ? `mc-crafting-cell flex items-center justify-center ${
+                isSelected ? 'mc-crafting-cell--selected' : ''
+              }`
+            : `relative w-11 h-11 rounded-md flex items-center justify-center transition-colors cursor-pointer ${
+                isSelected
+                  ? 'bg-[#31404D] ring-2 ring-[#E8DFC8]'
+                  : 'bg-[#1D252E] hover:bg-[#26313D] border border-white/10'
+              }`
+        }
       >
-        {showNum !== undefined && (
+        {showNum !== undefined && !textured && (
           <span className="absolute top-0.5 left-1 text-[9px] font-mono-num text-stone-500 leading-none">
             {showNum}
           </span>
@@ -316,7 +337,7 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
           <img
             src={iconSrc}
             alt={def?.name ?? 'Item'}
-            className="w-7 h-7 pixelated pointer-events-none"
+            className={`${textured ? 'w-8 h-8' : 'w-7 h-7'} pixelated pointer-events-none`}
             draggable={false}
           />
         )}
@@ -343,11 +364,214 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
     );
   };
 
+  const renderGridCell = (gIdx: number, textured = false) => {
+    const cell = craftingGrid[gIdx];
+    const ghostItem =
+      !cell && !gridHasItems && inspectedPreview ? inspectedPreview[gIdx] : null;
+    const iconSrc = cell
+      ? itemIcons[cell.item]
+      : ghostItem !== null
+        ? itemIcons[ghostItem]
+        : undefined;
+    const cellDef = cell
+      ? ITEM_DEFS[cell.item]
+      : ghostItem !== null
+        ? ITEM_DEFS[ghostItem]
+        : null;
+
+    return (
+      <button
+        key={gIdx}
+        type="button"
+        onClick={(e) => handleGridCellClick(gIdx, e.shiftKey)}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          if (cell) onReturnGridCell(gIdx);
+        }}
+        title={
+          cell
+            ? `${cellDef?.name} (${cell.count}) — Click to return`
+            : selectedDef
+              ? `Place ${selectedDef.name} here`
+              : 'Empty crafting slot'
+        }
+        className={
+          textured
+            ? 'mc-crafting-cell relative flex items-center justify-center cursor-pointer'
+            : `relative w-12 h-12 rounded-md flex items-center justify-center transition-colors cursor-pointer ${
+                selectedSlot
+                  ? 'bg-[#1D2832] hover:bg-[#293845] border border-[#96D86E]/35'
+                  : 'bg-[#1B222B] hover:bg-[#242E39] border border-white/12'
+              }`
+        }
+      >
+        {iconSrc && (
+          <img
+            src={iconSrc}
+            alt={cellDef?.name ?? 'Ingredient'}
+            className={`w-8 h-8 pixelated pointer-events-none ${cell ? 'opacity-100' : 'opacity-30'}`}
+            draggable={false}
+          />
+        )}
+        {cell && cell.count > 1 && (
+          <span
+            className="absolute bottom-0.5 right-1 text-[10px] font-mono-num font-bold text-white leading-none"
+            style={{ textShadow: '0 1px 2px rgba(0,0,0,0.95)' }}
+          >
+            {cell.count}
+          </span>
+        )}
+      </button>
+    );
+  };
+
+  const renderOutputButton = (textured = false) => (
+    <button
+      type="button"
+      disabled={!matchedGridRecipe}
+      onClick={() => onCraftFromGrid(false)}
+      title={
+        matchedGridRecipe
+          ? `Click to craft ${matchedGridRecipe.name}`
+          : 'Arrange ingredients to craft'
+      }
+      className={
+        textured
+          ? `mc-crafting-output flex items-center justify-center ${
+              matchedGridRecipe ? 'cursor-pointer' : 'cursor-default'
+            }`
+          : `relative w-14 h-14 rounded-lg flex items-center justify-center border transition-colors ${
+              matchedGridRecipe
+                ? 'bg-[#223225] border-[#96D86E] hover:bg-[#2A3F2D] cursor-pointer shadow-[0_0_16px_rgba(92,160,58,0.28)]'
+                : 'bg-[#182028] border-white/10 cursor-default'
+            }`
+      }
+    >
+      {matchedGridRecipe && itemIcons[matchedGridRecipe.output.item] ? (
+        <img
+          src={itemIcons[matchedGridRecipe.output.item]}
+          alt={matchedGridRecipe.name}
+          className="w-9 h-9 pixelated pointer-events-none"
+          draggable={false}
+        />
+      ) : null}
+      {matchedGridRecipe && matchedGridRecipe.output.count > 1 && (
+        <span
+          className="absolute bottom-1 right-1.5 text-xs font-mono-num font-bold text-white leading-none"
+          style={{ textShadow: '0 1px 2px rgba(0,0,0,0.95)' }}
+        >
+          {matchedGridRecipe.output.count}
+        </span>
+      )}
+    </button>
+  );
+
+  const renderCraftStatus = () => (
+    <div className="text-center">
+      <div className="text-xs font-bold text-stone-100 min-h-[16px]">
+        {matchedGridRecipe ? matchedGridRecipe.name : 'No recipe matched'}
+      </div>
+      {matchedGridRecipe && (
+        <div className="mt-1.5 flex items-center justify-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => onCraftFromGrid(false)}
+            className="mc-btn-sm px-3 py-1 text-[11px] font-bold cursor-pointer whitespace-nowrap"
+          >
+            Craft ×1
+          </button>
+          {gridMaxCraftable > 1 && (
+            <button
+              type="button"
+              onClick={() => onCraftFromGrid(true)}
+              className="mc-btn-sm px-3 py-1 text-[11px] font-bold cursor-pointer whitespace-nowrap"
+            >
+              All ×{gridMaxCraftable}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderBenchHeader = () => (
+    <div className="flex items-center justify-between mb-3">
+      <span className="text-xs font-semibold text-stone-200">
+        {gridSize === 3 ? '3×3 Crafting Grid' : '2×2 Pocket Grid'}
+      </span>
+      <div className="flex items-center gap-2">
+        {inspectedRecipe && !gridHasItems && (
+          <span className="text-[11px] text-stone-400">
+            {recipeFitsInGridSize(inspectedRecipe, gridSize)
+              ? `Previewing ${inspectedRecipe.name}`
+              : 'Requires 3×3 Crafting Table'}
+          </span>
+        )}
+        {gridHasItems && (
+          <button
+            type="button"
+            onClick={onClearGrid}
+            className="mc-btn-sm flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold cursor-pointer"
+          >
+            <Eraser className="w-3 h-3" />
+            <span>Clear</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderSelectionBar = () => (
+    <div className="flex items-center justify-between min-h-[26px]">
+      <span className="text-xs font-semibold text-stone-300">
+        {selectedDef
+          ? `Selected: ${selectedDef.name} — click slot to swap or ${gridSize}×${gridSize} cell to place`
+          : 'Inventory Slots'}
+      </span>
+      {selectedSlotIdx !== null && selectedDef?.foodRestore && (
+        <button
+          type="button"
+          onClick={() => {
+            onEatSlot(selectedSlotIdx);
+            setSelectedSlotIdx(null);
+          }}
+          className="mc-btn-sm flex items-center gap-1.5 px-3 py-1 text-xs font-bold cursor-pointer whitespace-nowrap"
+        >
+          <Utensils className="w-3 h-3 text-[#E8C574]" />
+          <span>Eat (+{selectedDef.foodRestore})</span>
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-4 bg-[#0B1016]/74">
-      <div className="w-full max-w-5xl rounded-xl bg-[#161D24] border border-white/15 shadow-[0_18px_56px_rgba(0,0,0,0.68)] overflow-hidden">
+      {gridSize === 3 && (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close crafting table"
+          title="Close crafting table"
+          className="absolute right-5 top-5 w-9 h-9 rounded-md bg-[#12181F]/85 hover:bg-[#1E2731]/95 border border-white/15 text-stone-100 flex items-center justify-center cursor-pointer"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      )}
+      <div
+        className={
+          gridSize === 3
+            ? 'contents'
+            : 'w-full max-w-5xl rounded-xl bg-[#161D24] border border-white/15 shadow-[0_18px_56px_rgba(0,0,0,0.68)] overflow-hidden'
+        }
+      >
         {/* Header */}
-        <div className="flex items-center justify-between gap-4 px-5 py-3.5 border-b border-white/10">
+        <div
+          className={
+            gridSize === 3
+              ? 'hidden'
+              : 'flex items-center justify-between gap-4 px-5 py-3.5 border-b border-white/10'
+          }
+        >
           <div>
             <h2 className="font-display text-lg font-bold text-stone-100">
               {gridSize === 3 ? 'Crafting Table (3×3)' : 'Pocket Crafting (2×2) & Backpack'}
@@ -368,23 +592,45 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-white/10 max-h-[80vh] overflow-y-auto">
-          {/* Left Column: Crafting Grid + Backpack + Hotbar */}
-          <div className="lg:col-span-6 p-5 space-y-5">
-            {/* Interactive Crafting Bench */}
-            <div className="p-3.5 rounded-lg bg-[#11171D] border border-white/10">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-stone-200">
-                  {gridSize === 3 ? '3×3 Crafting Grid' : '2×2 Pocket Grid'}
-                </span>
-                <div className="flex items-center gap-2">
-                  {inspectedRecipe && !gridHasItems && (
-                    <span className="text-[11px] text-stone-400">
-                      {recipeFitsInGridSize(inspectedRecipe, gridSize)
-                        ? `Previewing ${inspectedRecipe.name}`
-                        : 'Requires 3×3 Crafting Table'}
-                    </span>
-                  )}
+        <div
+          className={
+            gridSize === 3
+              ? 'flex flex-wrap items-start justify-center gap-1'
+              : 'grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-white/10 max-h-[80vh] overflow-y-auto'
+          }
+        >
+          {/* Crafting Grid + Inventory (right side in 3x3 view) */}
+          <div className={gridSize === 3 ? 'order-2 flex flex-col items-center' : 'lg:col-span-6 p-5'}>
+            {gridSize === 3 ? (
+              <div className="flex flex-col items-center gap-2">
+                <div className="mc-crafting-surface">
+                  <button
+                    type="button"
+                    className="mc-recipe-book-toggle"
+                    data-active={recipeBookOpen ? 'true' : undefined}
+                    onClick={() => setRecipeBookOpen((v) => !v)}
+                    title={recipeBookOpen ? 'Hide Recipe Book' : 'Show Recipe Book'}
+                    aria-label={recipeBookOpen ? 'Hide Recipe Book' : 'Show Recipe Book'}
+                  />
+
+                  <div className="mc-crafting-surface__grid">
+                    {Array.from({ length: cellCount }, (_, gIdx) => renderGridCell(gIdx, true))}
+                  </div>
+                  {renderOutputButton(true)}
+
+                  <div className="mc-crafting-inventory mc-crafting-inventory--main">
+                    {Array.from({ length: 18 }, (_, i) =>
+                      renderSlotButton(HOTBAR_SIZE + i, undefined, true),
+                    )}
+                  </div>
+                  <div className="mc-crafting-inventory mc-crafting-inventory--hotbar">
+                    {Array.from({ length: HOTBAR_SIZE }, (_, i) =>
+                      renderSlotButton(i, undefined, true),
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-center gap-2">
                   {gridHasItems && (
                     <button
                       type="button"
@@ -395,196 +641,83 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
                       <span>Clear</span>
                     </button>
                   )}
+                  {selectedSlotIdx !== null && selectedDef?.foodRestore && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onEatSlot(selectedSlotIdx);
+                        setSelectedSlotIdx(null);
+                      }}
+                      className="mc-btn-sm flex items-center gap-1.5 px-3 py-1 text-xs font-bold cursor-pointer whitespace-nowrap"
+                    >
+                      <Utensils className="w-3 h-3 text-[#E8C574]" />
+                      <span>Eat (+{selectedDef.foodRestore})</span>
+                    </button>
+                  )}
                 </div>
+
+                {renderCraftStatus()}
               </div>
+            ) : (
+              <div className="space-y-5">
+                <div className="p-3.5 rounded-lg bg-[#11171D] border border-white/10">
+                  {renderBenchHeader()}
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {Array.from({ length: cellCount }, (_, gIdx) => renderGridCell(gIdx))}
+                    </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                {/* 2x2 or 3x3 Grid Cells */}
-                <div className={`grid ${gridSize === 3 ? 'grid-cols-3' : 'grid-cols-2'} gap-1.5`}>
-                  {Array.from({ length: cellCount }, (_, gIdx) => {
-                    const cell = craftingGrid[gIdx];
-                    const ghostItem =
-                      !cell && !gridHasItems && inspectedPreview ? inspectedPreview[gIdx] : null;
-                    const iconSrc = cell
-                      ? itemIcons[cell.item]
-                      : ghostItem !== null
-                        ? itemIcons[ghostItem]
-                        : undefined;
-                    const cellDef = cell
-                      ? ITEM_DEFS[cell.item]
-                      : ghostItem !== null
-                        ? ITEM_DEFS[ghostItem]
-                        : null;
+                    <ArrowRight className="w-5 h-5 text-stone-500 shrink-0" />
 
-                    return (
-                      <button
-                        key={gIdx}
-                        type="button"
-                        onClick={(e) => handleGridCellClick(gIdx, e.shiftKey)}
-                        onContextMenu={(e) => {
-                          e.preventDefault();
-                          if (cell) onReturnGridCell(gIdx);
-                        }}
-                        title={
-                          cell
-                            ? `${cellDef?.name} (${cell.count}) — Click to return`
-                            : selectedDef
-                              ? `Place ${selectedDef.name} here`
-                              : 'Empty crafting slot'
-                        }
-                        className={`relative w-12 h-12 rounded-md flex items-center justify-center transition-colors cursor-pointer ${
-                          selectedSlot
-                            ? 'bg-[#1D2832] hover:bg-[#293845] border border-[#96D86E]/35'
-                            : 'bg-[#1B222B] hover:bg-[#242E39] border border-white/12'
-                        }`}
-                      >
-                        {iconSrc && (
-                          <img
-                            src={iconSrc}
-                            alt={cellDef?.name ?? 'Ingredient'}
-                            className={`w-8 h-8 pixelated pointer-events-none ${
-                              cell ? 'opacity-100' : 'opacity-30'
-                            }`}
-                            draggable={false}
-                          />
-                        )}
-                        {cell && cell.count > 1 && (
-                          <span
-                            className="absolute bottom-0.5 right-1 text-[10px] font-mono-num font-bold text-white leading-none"
-                            style={{ textShadow: '0 1px 2px rgba(0,0,0,0.95)' }}
-                          >
-                            {cell.count}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
+                    <div className="flex-1 min-w-[140px] flex flex-col items-center gap-2">
+                      {renderOutputButton()}
+                      {renderCraftStatus()}
+                    </div>
+                  </div>
                 </div>
 
-                <ArrowRight className="w-5 h-5 text-stone-500 shrink-0" />
+                <div className="space-y-3">
+                  {renderSelectionBar()}
 
-                {/* Output Result Slot & Craft Actions */}
-                <div className="flex-1 min-w-[140px] flex flex-col items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={!matchedGridRecipe}
-                    onClick={() => onCraftFromGrid(false)}
-                    title={
-                      matchedGridRecipe
-                        ? `Click to craft ${matchedGridRecipe.name}`
-                        : 'Arrange ingredients to craft'
-                    }
-                    className={`relative w-14 h-14 rounded-lg flex items-center justify-center border transition-colors ${
-                      matchedGridRecipe
-                        ? 'bg-[#223225] border-[#96D86E] hover:bg-[#2A3F2D] cursor-pointer shadow-[0_0_16px_rgba(92,160,58,0.28)]'
-                        : 'bg-[#182028] border-white/10 cursor-default'
-                    }`}
-                  >
-                    {matchedGridRecipe && itemIcons[matchedGridRecipe.output.item] ? (
-                      <img
-                        src={itemIcons[matchedGridRecipe.output.item]}
-                        alt={matchedGridRecipe.name}
-                        className="w-9 h-9 pixelated pointer-events-none"
-                        draggable={false}
-                      />
-                    ) : null}
-                    {matchedGridRecipe && matchedGridRecipe.output.count > 1 && (
-                      <span
-                        className="absolute bottom-1 right-1.5 text-xs font-mono-num font-bold text-white leading-none"
-                        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.95)' }}
-                      >
-                        {matchedGridRecipe.output.count}
-                      </span>
-                    )}
-                  </button>
+                  <div className="grid grid-cols-6 sm:grid-cols-9 gap-1.5">
+                    {Array.from({ length: 18 }, (_, i) => renderSlotButton(HOTBAR_SIZE + i))}
+                  </div>
 
-                  <div className="text-center">
-                    <div className="text-xs font-bold text-stone-100 min-h-[16px]">
-                      {matchedGridRecipe ? matchedGridRecipe.name : 'No recipe matched'}
+                  <div className="pt-2.5 border-t border-white/10">
+                    <div className="text-xs font-semibold text-stone-400 mb-2">Hotbar (1–9)</div>
+                    <div className="grid grid-cols-6 sm:grid-cols-9 gap-1.5">
+                      {Array.from({ length: HOTBAR_SIZE }, (_, i) => renderSlotButton(i, i + 1))}
                     </div>
-                    {matchedGridRecipe && (
-                      <div className="mt-1.5 flex items-center justify-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => onCraftFromGrid(false)}
-                          className="mc-btn-sm px-3 py-1 text-[11px] font-bold cursor-pointer whitespace-nowrap"
-                        >
-                          Craft ×1
-                        </button>
-                        {gridMaxCraftable > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => onCraftFromGrid(true)}
-                            className="mc-btn-sm px-3 py-1 text-[11px] font-bold cursor-pointer whitespace-nowrap"
-                          >
-                            All ×{gridMaxCraftable}
-                          </button>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Backpack & Hotbar */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between min-h-[26px]">
-                <span className="text-xs font-semibold text-stone-300">
-                  {selectedDef
-                    ? `Selected: ${selectedDef.name} — click slot to swap or ${gridSize}×${gridSize} cell to place`
-                    : 'Backpack Storage'}
-                </span>
-                {selectedSlotIdx !== null && selectedDef?.foodRestore && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onEatSlot(selectedSlotIdx);
-                      setSelectedSlotIdx(null);
-                    }}
-                    className="mc-btn-sm flex items-center gap-1.5 px-3 py-1 text-xs font-bold cursor-pointer whitespace-nowrap"
-                  >
-                    <Utensils className="w-3 h-3 text-[#E8C574]" />
-                    <span>Eat (+{selectedDef.foodRestore})</span>
-                  </button>
-                )}
-              </div>
-
-              <div className="grid grid-cols-6 sm:grid-cols-9 gap-1.5">
-                {Array.from({ length: 18 }, (_, i) => renderSlotButton(HOTBAR_SIZE + i))}
-              </div>
-
-              <div className="pt-2.5 border-t border-white/10">
-                <div className="text-xs font-semibold text-stone-400 mb-2">Hotbar (1–9)</div>
-                <div className="grid grid-cols-6 sm:grid-cols-9 gap-1.5">
-                  {Array.from({ length: HOTBAR_SIZE }, (_, i) => renderSlotButton(i, i + 1))}
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Right Column: Smart Recipe Book */}
-          <div className="lg:col-span-6 p-5 flex flex-col gap-3">
-            {/* Search & Craftable Toggle */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative flex-1 min-w-[160px]">
-                <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search recipes or ingredients..."
-                  className="w-full pl-8 pr-3 py-1.5 rounded-md bg-[#0E1318] border border-white/15 text-xs text-stone-100 placeholder:text-stone-500 focus:outline-none focus:border-[#7AC150]"
-                />
-              </div>
+          {/* Recipe Book (left side in 3x3 view) */}
+          {(gridSize !== 3 || recipeBookOpen) && (
+          <div className={gridSize === 3 ? 'order-1' : 'lg:col-span-6 flex justify-center p-5'}>
+            <div className="mc-recipe-book self-start">
+              <div className="mc-recipe-book__content">
+                {/* Search & Craftable Toggle */}
+            <div className="mc-recipe-book__search">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search..."
+                aria-label="Search recipes"
+                className="mc-recipe-book__search-input"
+              />
               <button
                 type="button"
                 data-active={onlyCraftable ? 'true' : undefined}
                 onClick={() => setOnlyCraftable((v) => !v)}
-                className="mc-btn-sm px-3 py-1.5 text-xs font-bold cursor-pointer whitespace-nowrap"
-              >
-                Craftable Only
-              </button>
+                title="Show only craftable recipes"
+                aria-label="Show only craftable recipes"
+                aria-pressed={onlyCraftable}
+                className="mc-recipe-filter-toggle shrink-0"
+              />
             </div>
 
             {/* Category Tabs */}
@@ -602,124 +735,98 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
               ))}
             </div>
 
-            {/* Recipe List */}
-            <div className="space-y-2 max-h-[430px] overflow-y-auto pr-1">
-              {visibleRecipes.length === 0 ? (
-                <div className="py-10 text-center text-xs text-stone-400">
-                  No recipes match your current filter.
-                </div>
-              ) : (
-                visibleRecipes.map((recipe) => {
-                  const fitsGrid = recipeFitsInGridSize(recipe, gridSize);
-                  const maxCraft = getMaxCraftCount(survivalSlots, recipe);
-                  const craftable = fitsGrid && maxCraft > 0;
-                  const outIcon = itemIcons[recipe.output.item];
-                  const isInspected = inspectedRecipeId === recipe.id;
+                {/* Recipe Slots */}
+                <div className="mc-recipe-book__list flex-1 min-h-0 overflow-y-auto pr-1">
+                  {visibleRecipes.length === 0 ? (
+                    <div className="py-10 text-center text-xs text-stone-400">
+                      No recipes match your current filter.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2">
+                      {visibleRecipes.map((recipe) => {
+                        const fitsGrid = recipeFitsInGridSize(recipe, gridSize);
+                        const maxCraft = getMaxCraftCount(survivalSlots, recipe);
+                        const craftable = fitsGrid && maxCraft > 0;
+                        const outIcon = itemIcons[recipe.output.item];
+                        const isInspected = inspectedRecipeId === recipe.id;
+                        const slotClass = craftable
+                          ? maxCraft > 1
+                            ? 'mc-recipe-slot--many-craftable'
+                            : 'mc-recipe-slot--craftable'
+                          : !fitsGrid
+                            ? 'mc-recipe-slot--many-uncraftable'
+                            : 'mc-recipe-slot--uncraftable';
+                        const ingredientText = recipe.ingredients
+                          .map(
+                            (ing) =>
+                              `${ITEM_DEFS[ing.item as ItemType]?.name ?? ing.item} ${countItemInInventory(survivalSlots, ing.item)}/${ing.count}`,
+                          )
+                          .join(', ');
 
-                  return (
-                    <div
-                      key={recipe.id}
-                      onMouseEnter={() => setInspectedRecipeId(recipe.id)}
-                      onFocus={() => setInspectedRecipeId(recipe.id)}
-                      className={`flex items-center justify-between gap-2.5 p-2.5 rounded-lg border transition-colors ${
-                        craftable
-                          ? isInspected
-                            ? 'bg-[#22303B] border-[#96D86E]/55'
-                            : 'bg-[#1D2731] border-[#96D86E]/30'
-                          : isInspected
-                            ? 'bg-[#1D242C] border-white/18 opacity-90'
-                            : 'bg-[#181F27] border-white/8 opacity-75'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-10 h-10 rounded bg-[#11171D] border border-white/10 flex items-center justify-center shrink-0">
-                          {outIcon ? (
-                            <img
-                              src={outIcon}
-                              alt={recipe.name}
-                              className="w-7 h-7 pixelated"
-                              draggable={false}
-                            />
-                          ) : null}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-baseline gap-1.5">
-                            <span className="text-xs font-bold text-stone-100 truncate">
-                              {recipe.name}
-                            </span>
-                            <span
-                              className={`text-[10px] shrink-0 ${
-                                fitsGrid ? 'text-stone-500' : 'text-[#E8C574] font-semibold'
+                        return (
+                          <div key={recipe.id} className="flex flex-col items-center gap-0.5">
+                            <button
+                              type="button"
+                              onMouseEnter={() => setInspectedRecipeId(recipe.id)}
+                              onFocus={() => setInspectedRecipeId(recipe.id)}
+                              onClick={() => {
+                                if (craftable) onFillGridFromRecipe(recipe.id);
+                              }}
+                              title={`${recipe.name} — ${ingredientText}${
+                                craftable ? '' : ' (uncraftable)'
+                              }`}
+                              className={`mc-recipe-slot ${slotClass} w-full aspect-square flex items-center justify-center ${
+                                isInspected ? 'mc-recipe-slot--inspected' : ''
                               }`}
                             >
-                              {fitsGrid
-                                ? recipe.pattern
-                                  ? 'Shaped'
-                                  : 'Shapeless'
-                                : '3×3 Table'}
+                              {outIcon ? (
+                                <img
+                                  src={outIcon}
+                                  alt={recipe.name}
+                                  className="w-[68%] h-[68%] pixelated"
+                                  draggable={false}
+                                />
+                              ) : null}
+                            </button>
+                            <span className="w-full text-center text-[9px] leading-tight text-stone-300 truncate">
+                              {recipe.name}
                             </span>
                           </div>
-                          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-stone-400">
-                            {recipe.ingredients.map((ing) => {
-                              const have = countItemInInventory(survivalSlots, ing.item);
-                              const ok = have >= ing.count;
-                              return (
-                                <span
-                                  key={ing.item}
-                                  className={`font-mono-num ${ok ? 'text-[#96D86E]' : 'text-stone-400'}`}
-                                >
-                                  {ITEM_DEFS[ing.item as ItemType]?.name} {have}/{ing.count}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          type="button"
-                          disabled={!craftable}
-                          onClick={() => onFillGridFromRecipe(recipe.id)}
-                          title={
-                            fitsGrid
-                              ? `Fill ${gridSize}×${gridSize} Crafting Grid`
-                              : 'Place and right-click a Crafting Table to craft this'
-                          }
-                          className="mc-btn-sm px-2.5 py-1 text-[11px] font-bold whitespace-nowrap cursor-pointer"
-                        >
-                          Fill
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!craftable}
-                          onClick={() => onCraftRecipe(recipe.id, false)}
-                          title={
-                            fitsGrid
-                              ? `Craft ${recipe.name}`
-                              : 'Place and right-click a Crafting Table to craft this'
-                          }
-                          className="mc-btn-sm px-3 py-1 text-xs font-bold whitespace-nowrap cursor-pointer"
-                        >
-                          Craft
-                        </button>
-                        {craftable && maxCraft > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => onCraftRecipe(recipe.id, true)}
-                            title={`Craft ${maxCraft} batches`}
-                            className="mc-btn-sm px-2.5 py-1 text-[11px] font-bold font-mono-num cursor-pointer whitespace-nowrap"
-                          >
-                            ×{maxCraft}
-                          </button>
-                        )}
-                      </div>
+                        );
+                      })}
                     </div>
-                  );
-                })
-              )}
+                  )}
+                </div>
+
+                {inspectedRecipe &&
+                  recipeFitsInGridSize(inspectedRecipe, gridSize) &&
+                  getMaxCraftCount(survivalSlots, inspectedRecipe) > 0 && (
+                    <div className="flex items-center gap-1.5 border-t border-white/10 pt-2 flex-wrap">
+                      <span className="text-[10px] font-bold text-stone-200 truncate max-w-[92px]">
+                        {inspectedRecipe.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => onCraftRecipe(inspectedRecipe.id, false)}
+                        className="mc-btn-sm px-2.5 py-1 text-[11px] font-bold cursor-pointer"
+                      >
+                        Craft
+                      </button>
+                      {getMaxCraftCount(survivalSlots, inspectedRecipe) > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => onCraftRecipe(inspectedRecipe.id, true)}
+                          className="mc-btn-sm px-2 py-1 text-[11px] font-bold font-mono-num cursor-pointer"
+                        >
+                          ×{getMaxCraftCount(survivalSlots, inspectedRecipe)}
+                        </button>
+                      )}
+                    </div>
+                  )}
+              </div>
             </div>
           </div>
+          )}
         </div>
       </div>
     </div>

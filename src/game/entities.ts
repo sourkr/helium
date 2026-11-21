@@ -6,10 +6,10 @@ import {
   isLiquidBlock,
   isSolidBlock,
   TILE,
-} from './blocks';
-import { ITEM_DEFS, ItemType } from './survival';
+} from '../shared/blocks';
+import { ITEM_DEFS, ItemType } from '../shared/survival';
 import { ATLAS_COLS, ATLAS_ROWS } from './textures';
-import { VoxelWorld } from './world';
+import { VoxelWorld } from '../shared/world';
 
 /**
  * Generates a soft radial Minecraft-style ground contact shadow texture.
@@ -1506,6 +1506,8 @@ export class HeldBlockViewmodel {
   private readonly fallbackOrbMesh: THREE.Mesh;
 
   private readonly customItemGeometries = new Map<number, THREE.BufferGeometry>();
+  private readonly animatedItemGeometries = new Map<number, THREE.BufferGeometry[]>();
+  private readonly animatedItemFrames = new Map<number, number>();
   private readonly userOverrideIds = new Set<number>();
   private currentItem: ItemType | null = null;
   private displayMode: HeldDisplayMode = 'arm';
@@ -1614,7 +1616,33 @@ export class HeldBlockViewmodel {
   }
 
   public getCustomItemGeometry(item: ItemType): THREE.BufferGeometry | undefined {
+    const animated = this.animatedItemGeometries.get(item);
+    if (animated?.length) {
+      return animated[this.animatedItemFrames.get(item) ?? 0] ?? animated[0];
+    }
     return this.customItemGeometries.get(item);
+  }
+
+  /** Supplies per-frame voxel geometries for animated items (e.g. the clock). */
+  public setAnimatedItemGeometries(item: ItemType, geometries: THREE.BufferGeometry[]): void {
+    const previous = this.animatedItemGeometries.get(item);
+    if (previous) {
+      for (const geom of previous) {
+        if (!geometries.includes(geom)) geom.dispose();
+      }
+    }
+    if (geometries.length > 0) {
+      this.animatedItemGeometries.set(item, geometries);
+    } else {
+      this.animatedItemGeometries.delete(item);
+    }
+    if (this.currentItem === item) this.applyItemVisuals(item);
+  }
+
+  /** Selects the active frame for an animated held item. */
+  public setAnimatedItemFrame(item: ItemType, frame: number): void {
+    this.animatedItemFrames.set(item, frame);
+    if (item === this.currentItem) this.applyItemVisuals(item);
   }
 
   public setItem(item: ItemType | null) {
@@ -1657,7 +1685,11 @@ export class HeldBlockViewmodel {
     this.armGroup.visible = false;
     this.blockMesh.visible = false;
 
-    const customGeom = this.customItemGeometries.get(item);
+    const animatedGeoms = this.animatedItemGeometries.get(item);
+    const frameIndex = this.animatedItemFrames.get(item) ?? 0;
+    const customGeom = animatedGeoms?.length
+      ? (animatedGeoms[frameIndex % animatedGeoms.length] ?? animatedGeoms[0])
+      : this.customItemGeometries.get(item);
     if (customGeom) {
       this.fallbackOrbMesh.visible = false;
       this.customSpriteMesh.geometry = customGeom;
@@ -1864,6 +1896,11 @@ export class HeldBlockViewmodel {
       geom.dispose();
     }
     this.customItemGeometries.clear();
+    for (const geometries of this.animatedItemGeometries.values()) {
+      for (const geom of geometries) geom.dispose();
+    }
+    this.animatedItemGeometries.clear();
+    this.animatedItemFrames.clear();
     this.userOverrideIds.clear();
     this.group.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {

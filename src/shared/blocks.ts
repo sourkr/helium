@@ -18,6 +18,7 @@ export enum BlockType {
   CoalOre = 16,
   IronOre = 17,
   GoldBlock = 18,
+  GoldOre = 19,
   DarkSlate = 20,
   Terracotta = 21,
   Bedrock = 22,
@@ -34,6 +35,10 @@ export enum BlockType {
   ShortGrass = 33,
   TallGrassBottom = 34,
   TallGrassTop = 35,
+  RedstoneOre = 36,
+  BirchPlanks = 37,
+  Lava = 38,
+  Clay = 39,
 }
 
 export type SoundMaterial =
@@ -72,7 +77,7 @@ export interface BlockDefinition {
 }
 
 /**
- * Tile index map for our 8x6 (48-tile) texture atlas.
+ * Tile index map for our 8x7 (56-tile) texture atlas.
  */
 export const TILE = {
   GRASS_TOP: 0,
@@ -123,6 +128,12 @@ export const TILE = {
   BED_FOOT_WEST: 45,
   TALL_GRASS_BOTTOM: 46,
   TALL_GRASS_TOP: 47,
+  GOLD_ORE: 48,
+  REDSTONE_ORE: 49,
+  BIRCH_PLANKS: 50,
+  LAVA_STILL: 51,
+  LAVA_FLOW: 52,
+  CLAY: 53,
 } as const;
 
 export const BLOCK_DEFS: Record<BlockType, BlockDefinition> = {
@@ -260,6 +271,20 @@ export const BLOCK_DEFS: Record<BlockType, BlockDefinition> = {
     particleColor: '#3589c9',
     buildable: false,
   },
+  [BlockType.Lava]: {
+    id: BlockType.Lava,
+    name: 'Lava',
+    category: 'Natural',
+    solid: false,
+    transparent: true,
+    isLiquid: true,
+    breakable: false,
+    emissive: true,
+    sound: 'water',
+    tiles: [TILE.LAVA_STILL, TILE.LAVA_FLOW, TILE.LAVA_STILL],
+    particleColor: '#ff6a1e',
+    buildable: false,
+  },
   [BlockType.Brick]: {
     id: BlockType.Brick,
     name: 'Red Brick',
@@ -308,6 +333,18 @@ export const BLOCK_DEFS: Record<BlockType, BlockDefinition> = {
     particleColor: '#dcd9ce',
     buildable: true,
   },
+  [BlockType.BirchPlanks]: {
+    id: BlockType.BirchPlanks,
+    name: 'Birch Planks',
+    category: 'Wood & Foliage',
+    solid: true,
+    transparent: false,
+    breakable: true,
+    sound: 'wood',
+    tiles: [TILE.BIRCH_PLANKS, TILE.BIRCH_PLANKS, TILE.BIRCH_PLANKS],
+    particleColor: '#d8cfb4',
+    buildable: true,
+  },
   [BlockType.BirchLeaves]: {
     id: BlockType.BirchLeaves,
     name: 'Birch Foliage',
@@ -345,6 +382,18 @@ export const BLOCK_DEFS: Record<BlockType, BlockDefinition> = {
     particleColor: '#b59d84',
     buildable: true,
   },
+  [BlockType.GoldOre]: {
+    id: BlockType.GoldOre,
+    name: 'Gold Ore',
+    category: 'Natural',
+    solid: true,
+    transparent: false,
+    breakable: true,
+    sound: 'stone',
+    tiles: [TILE.GOLD_ORE, TILE.GOLD_ORE, TILE.GOLD_ORE],
+    particleColor: '#e5b93d',
+    buildable: true,
+  },
   [BlockType.GoldBlock]: {
     id: BlockType.GoldBlock,
     name: 'Gilded Gold',
@@ -379,6 +428,18 @@ export const BLOCK_DEFS: Record<BlockType, BlockDefinition> = {
     sound: 'stone',
     tiles: [TILE.TERRACOTTA, TILE.TERRACOTTA, TILE.TERRACOTTA],
     particleColor: '#b96946',
+    buildable: true,
+  },
+  [BlockType.Clay]: {
+    id: BlockType.Clay,
+    name: 'Clay',
+    category: 'Natural',
+    solid: true,
+    transparent: false,
+    breakable: true,
+    sound: 'dirt',
+    tiles: [TILE.CLAY, TILE.CLAY, TILE.CLAY],
+    particleColor: '#c3c9d2',
     buildable: true,
   },
   [BlockType.Bedrock]: {
@@ -567,6 +628,18 @@ export const BLOCK_DEFS: Record<BlockType, BlockDefinition> = {
     tiles: [TILE.TALL_GRASS_TOP, TILE.TALL_GRASS_TOP, TILE.TALL_GRASS_TOP],
     particleColor: '#67a948',
     buildable: false,
+  },
+  [BlockType.RedstoneOre]: {
+    id: BlockType.RedstoneOre,
+    name: 'Redstone Ore',
+    category: 'Natural',
+    solid: true,
+    transparent: false,
+    breakable: true,
+    sound: 'stone',
+    tiles: [TILE.REDSTONE_ORE, TILE.REDSTONE_ORE, TILE.REDSTONE_ORE],
+    particleColor: '#c6372f',
+    buildable: true,
   },
 };
 
