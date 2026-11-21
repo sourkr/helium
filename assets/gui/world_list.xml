@@ -1,0 +1,33 @@
+<screen>
+    <components>
+        <component name="world-info" onhover="is_hovered = event.inside">
+            <var name="is_hovered" type="bool">false</var>
+            <attr name="name" type="string"/>
+            <event name="play" />
+
+            <row gap="4px">
+                <box size="32px">
+                    <image src="world_icon" size="100%"/>
+                    <image
+                        src="sprites/world_list/join"
+                        hover_src="sprites/world_list/join_highlighted"
+                        size="100%"
+                        onclick="trigger(play)"
+                        visible="$is_hovered"
+                        background-color="hsl(0 0 50 / .5)" />
+                </box>
+
+                <text>$name</text>
+            </row>
+        </component>
+    </components>
+
+    <panaroma>
+        <column size="100%" align-items="top-center" gap="8px" padding-top="8px">
+            <text>Select World</text>
+            <text-field id="field.search" placeholder="Search World..." />
+
+            <column id="list.world" source="world" item="world-info" gap="4px" />
+        </column>
+    </panaroma>
+</screen>

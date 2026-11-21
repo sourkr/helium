@@ -98,11 +98,13 @@ const CREATIVE_EXTRA_SPECIALTY: ItemType[] = [
   ItemType.Compass,
 ];
 
-const CRAFT_TABS: Array<'All' | CraftingCategory> = [
-  'All',
-  'Tools',
-  'Materials',
-  'Food & Utility',
+type RecipeTabKey = 'All' | CraftingCategory;
+
+const CRAFT_TABS: Array<{ key: RecipeTabKey; label: string }> = [
+  { key: 'All', label: 'All' },
+  { key: 'Tools', label: 'Tools & Weapons' },
+  { key: 'Materials', label: 'Materials' },
+  { key: 'Food & Utility', label: 'Food & Utility' },
 ];
 
 export const InventoryModal: React.FC<InventoryModalProps> = ({
@@ -124,7 +126,7 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
   onClose,
 }) => {
   const [selectedSlotIdx, setSelectedSlotIdx] = useState<number | null>(null);
-  const [craftTab, setCraftTab] = useState<'All' | CraftingCategory>('All');
+  const [craftTab, setCraftTab] = useState<RecipeTabKey>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [onlyCraftable, setOnlyCraftable] = useState(false);
   const [inspectedRecipeId, setInspectedRecipeId] = useState<string | null>(null);
@@ -720,38 +722,60 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
               />
             </div>
 
-            {/* Category Tabs */}
-            <div className="flex items-center gap-1.5">
-              {CRAFT_TABS.map((cat) => {
-                const allTabIcon = cat === 'All' ? itemIcons[ItemType.Compass] : null;
+            <div className="mc-recipe-book__body">
+              {/* Category Tabs */}
+              <div className="mc-recipe-book__tabs">
+                {CRAFT_TABS.map((tab) => {
+                const allIcon = tab.key === 'All' ? itemIcons[ItemType.Compass] : null;
+                const toolIcons =
+                  tab.key === 'Tools'
+                    ? [itemIcons[ItemType.IronAxe], itemIcons[ItemType.GoldSword]].filter(
+                        (icon): icon is string => Boolean(icon),
+                      )
+                    : [];
+                const hasIcons = tab.key === 'All' || tab.key === 'Tools';
                 return (
                   <button
-                    key={cat}
+                    key={tab.key}
                     type="button"
-                    data-active={craftTab === cat ? 'true' : undefined}
-                    onClick={() => setCraftTab(cat)}
-                    title={cat}
-                    aria-label={cat}
-                    className={`mc-btn-sm flex flex-1 items-center justify-center px-2.5 py-1.5 text-xs font-bold whitespace-nowrap cursor-pointer${
-                      cat === 'All' ? ' mc-recipe-tab-icon' : ''
+                    data-active={craftTab === tab.key ? 'true' : undefined}
+                    onClick={() => setCraftTab(tab.key)}
+                    title={tab.label}
+                    aria-label={tab.label}
+                    className={`mc-btn-sm mc-recipe-tab flex flex-1 items-center justify-center px-2 py-1.5 text-xs font-bold whitespace-nowrap cursor-pointer${
+                      hasIcons ? ' mc-recipe-tab--icons' : ''
                     }`}
                   >
-                    {allTabIcon ? (
+                    {tab.key === 'All' && allIcon ? (
                       <img
-                        src={allTabIcon}
+                        src={allIcon}
                         alt=""
                         aria-hidden="true"
-                        className="mc-recipe-tab-icon__img"
+                        className="mc-recipe-tab__compass"
                         draggable={false}
                       />
+                    ) : tab.key === 'Tools' && toolIcons.length > 0 ? (
+                      <span className="mc-recipe-tab__tool-icons">
+                        {toolIcons.map((src, index) => (
+                          <img
+                            key={`${src}-${index}`}
+                            src={src}
+                            alt=""
+                            aria-hidden="true"
+                            className="mc-recipe-tab__tool-icon"
+                            draggable={false}
+                          />
+                        ))}
+                      </span>
                     ) : (
-                      cat
+                      tab.label
                     )}
                   </button>
                 );
               })}
-            </div>
+              </div>
 
+              <div className="mc-recipe-book__main">
                 {/* Recipe Slots */}
                 <div className="mc-recipe-book__list flex-1 min-h-0 overflow-y-auto pr-1">
                   {visibleRecipes.length === 0 ? (
@@ -840,6 +864,8 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
                       )}
                     </div>
                   )}
+              </div>
+            </div>
               </div>
             </div>
           </div>

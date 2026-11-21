@@ -47,6 +47,8 @@ export interface EngineSettings {
   showFps: boolean;
   playerShadow: boolean;
   entityShadows: boolean;
+  /** 0 = Auto (largest scale that fits), 1-4 = fixed integer GUI scale. */
+  guiScale: number;
 }
 
 /** Callback surface consumed by the React UI. Implemented by GameClient. */

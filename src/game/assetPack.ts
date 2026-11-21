@@ -285,6 +285,10 @@ function parseBlockAnimation(
   return { frameDurationSec: Math.max(0.05, defaultTicks * 0.05), frameOrder: null };
 }
 
+export function getAssetUrl(name: string): string | null {
+  return buildAssetLookup().get(name.toLowerCase()) ?? null;
+}
+
 export function getDirtTextureUrl(): string | null {
   const blockLookup = buildAssetLookup((p) => p.includes('/block/'));
   return blockLookup.get('dirt') ?? buildAssetLookup().get('dirt') ?? null;

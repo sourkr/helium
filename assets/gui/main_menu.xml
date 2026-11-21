@@ -1,0 +1,9 @@
+<screen>
+    <panaroma>
+        <column size="100%" align-items="center" gap="4px">
+            <button id="btn.singleplay">Singleplayer</button>
+            <button id="btn.mutiplayer" disable>Multiplayer</button>
+            <button id="btn.setting">Settings</button>
+        </column>
+    </panaroma>
+</screen>

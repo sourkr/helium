@@ -1,14 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { GameHud } from './components/GameHud';
-import {
-  DeathModal,
-  FurnaceModal,
-  InventoryModal,
-  PauseModal,
-  SettingsModal,
-} from './components/Modals';
-import { TitleOverlay } from './components/TitleOverlay';
-import { WorldManagerModal } from './components/WorldManagerModal';
+import CanvasGui, { GuiXmlEvent } from './gui/CanvasGui';
 import { getDirtTextureUrl } from './game/assetPack';
 import { DEFAULT_HOTBAR, TerrainPreset, TimePreset } from './shared/blocks';
 import { EngineSettings, GamePhase, HudSnapshot, GameClient } from './client/GameClient';
@@ -22,7 +13,6 @@ import {
   WorldSummary,
 } from './game/opfsStorage';
 import {
-  createEmptyFurnaceData,
   createStarterSurvivalInventory,
   FurnaceData,
   GameMode,
@@ -68,6 +58,7 @@ const DEFAULT_SETTINGS: EngineSettings = {
   showFps: true,
   playerShadow: true,
   entityShadows: true,
+  guiScale: 0,
 };
 
 function loadSavedSettings(): EngineSettings {
@@ -95,6 +86,10 @@ function loadSavedSettings(): EngineSettings {
         typeof parsed.entityShadows === 'boolean'
           ? parsed.entityShadows
           : DEFAULT_SETTINGS.entityShadows,
+      guiScale:
+        typeof parsed.guiScale === 'number' && Number.isFinite(parsed.guiScale)
+          ? Math.max(0, Math.min(4, Math.round(parsed.guiScale)))
+          : DEFAULT_SETTINGS.guiScale,
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -295,6 +290,16 @@ export default function App() {
     [worldInfo.id],
   );
 
+  const handleGuiEvent = useCallback(
+    (event: GuiXmlEvent) => {
+      if (event.name === 'play') {
+        const worldId = event.attrs.id;
+        if (worldId) void handlePlayWorld(worldId);
+      }
+    },
+    [handlePlayWorld],
+  );
+
   const handleCreateWorld = useCallback(
     async (options: {
       name: string;
@@ -481,152 +486,68 @@ export default function App() {
         aria-label="Helium 3D Voxel World"
       />
 
-      {/* WebGL Context Lost Fallback */}
-      {contextLost && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111820] text-stone-100 p-6">
-          <div className="max-w-sm text-center space-y-3">
-            <h2 className="font-display text-xl font-bold">Graphics Context Paused</h2>
-            <p className="text-sm text-stone-400">
-              WebGL rendering was interrupted. Reload the view to restore your world.
-            </p>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 rounded-md bg-[#5CA03A] text-[#0E160D] text-sm font-bold cursor-pointer"
-            >
-              Reload World
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Title Screen Shell (3-Button Main Menu) */}
-      {phase === 'title' && (
-        <TitleOverlay
-          fps={hud.fps}
-          showFps={settings.showFps}
-          hasPanorama={hasPanorama}
-          dirtTextureUrl={dirtTextureUrl}
-          onOpenSingleplayer={handleOpenWorlds}
-          onOpenSettings={() => setSettingsOpen(true)}
-        />
-      )}
-
-      {/* Active Gameplay HUD */}
-      {phase === 'playing' && (
-        <GameHud
-          hud={hud}
-          mode={mode}
-          creativeHotbar={creativeHotbar}
-          survivalSlots={survivalSlots}
-          activeSlot={activeSlot}
-          itemIcons={itemIcons}
-          muted={settings.muted}
-          showFps={settings.showFps}
-          onSelectSlot={handleSelectSlot}
-          onOpenPause={() => engineRef.current?.setPhase('paused')}
-          onToggleMute={handleToggleMute}
-          onToggleFly={handleToggleFly}
-        />
-      )}
-
-      {/* Survival Pocket Crafting (2x2) / Crafting Table (3x3) / Creative Palette Modal */}
-      {(phase === 'inventory' || phase === 'crafting') && (
-        <InventoryModal
-          mode={mode}
-          gridSize={phase === 'crafting' ? 3 : 2}
-          activeItem={creativeHotbar[activeSlot] ?? ItemType.Grass}
-          survivalSlots={survivalSlots}
-          craftingGrid={craftingGrid}
-          itemIcons={itemIcons}
-          onSelectCreativeItem={handleSelectCreativeItem}
-          onSwapSurvivalSlots={handleSwapSurvivalSlots}
-          onPlaceIntoGrid={handlePlaceIntoGrid}
-          onReturnGridCell={handleReturnGridCell}
-          onClearGrid={handleClearGrid}
-          onFillGridFromRecipe={handleFillGridFromRecipe}
-          onCraftFromGrid={handleCraftFromGrid}
-          onCraftRecipe={handleCraftRecipe}
-          onEatSlot={handleEatSlot}
-          onClose={() => engineRef.current?.setPhase('playing')}
-        />
-      )}
-
-      {/* Furnace Smelting Modal */}
-      {phase === 'furnace' && (
-        <FurnaceModal
-          furnace={activeFurnace ?? createEmptyFurnaceData()}
-          survivalSlots={survivalSlots}
-          itemIcons={itemIcons}
-          onSwapSurvivalSlots={handleSwapSurvivalSlots}
-          onPlaceIntoFurnace={handlePlaceIntoFurnace}
-          onTakeFurnaceSlot={handleTakeFurnaceSlot}
-          onQuickLoadSlot={handleQuickLoadFurnaceSlot}
-          onQuickLoadRecipe={handleQuickLoadFurnaceRecipe}
-          onClose={() => engineRef.current?.setPhase('playing')}
-        />
-      )}
-
-      {/* Pause & World Settings Modal */}
-      {phase === 'paused' && worldModalView === null && !settingsOpen && (
-        <PauseModal
-          worldName={worldInfo.name}
-          worldCount={Math.max(1, worlds.length)}
-          currentMode={mode}
-          currentSeed={worldInfo.seed}
-          currentPreset={worldInfo.preset}
-          editCount={hud.editCount}
-          onSelectMode={handleSelectMode}
-          onResume={() => engineRef.current?.setPhase('playing')}
-          onSetTime={handleSetTime}
-          onSaveNow={handleSaveNow}
-          onOpenWorlds={handleOpenWorlds}
-          onOpenNewWorld={handleOpenNewWorld}
-          onOpenSettings={() => setSettingsOpen(true)}
-          onResetEdits={handleResetEdits}
-          onReturnTitle={handleReturnTitle}
-        />
-      )}
-
-      {/* Multi-World Manager & New World Creator Modal (OPFS) */}
-      {worldModalView !== null && (
-        <WorldManagerModal
-          worlds={worlds}
-          activeWorldId={worldInfo.id}
-          initialView={worldModalView}
-          dirtTextureUrl={dirtTextureUrl}
-          onSelectWorld={handleSelectWorld}
-          onPlayWorld={handlePlayWorld}
-          onCreateWorld={handleCreateWorld}
-          onRenameWorld={handleRenameWorld}
-          onDuplicateWorld={handleDuplicateWorld}
-          onDeleteWorld={handleDeleteWorld}
-          onClose={() => setWorldModalView(null)}
-        />
-      )}
-
-      {/* Game Settings Modal */}
-      {settingsOpen && (
-        <SettingsModal
-          settings={settings}
-          hasPanorama={hasPanorama}
-          onClearPanorama={() => void engineRef.current?.clearPanorama()}
-          onChange={handleUpdateSettings}
-          onResetDefaults={handleResetSettings}
-          onClose={() => setSettingsOpen(false)}
-        />
-      )}
-
-      {/* Survival Death & Respawn Modal */}
-      {phase === 'dead' && (
-        <DeathModal
-          blocksMined={hud.blocksMined}
-          mobsDefeated={hud.mobsDefeated}
-          survivalSeconds={hud.survivalSeconds}
-          onRespawn={handleRespawn}
-          onReturnTitle={handleReturnTitle}
-        />
-      )}
+      {/* All menus, HUD elements and dialogs are drawn on this canvas. */}
+      <CanvasGui
+        phase={phase}
+        hud={hud}
+        mode={mode}
+        creativeHotbar={creativeHotbar}
+        survivalSlots={survivalSlots}
+        craftingGrid={craftingGrid}
+        activeSlot={activeSlot}
+        itemIcons={itemIcons}
+        settings={settings}
+        settingsOpen={settingsOpen}
+        worlds={worlds}
+        worldInfo={worldInfo}
+        worldModalView={worldModalView}
+        contextLost={contextLost}
+        hasPanorama={hasPanorama}
+        dirtTextureUrl={dirtTextureUrl}
+        activeFurnace={activeFurnace}
+        onSelectSlot={handleSelectSlot}
+        onOpenPause={() => engineRef.current?.setPhase('paused')}
+        onToggleMute={handleToggleMute}
+        onToggleFly={handleToggleFly}
+        onSelectCreativeItem={handleSelectCreativeItem}
+        onSwapSurvivalSlots={handleSwapSurvivalSlots}
+        onPlaceIntoGrid={handlePlaceIntoGrid}
+        onReturnGridCell={handleReturnGridCell}
+        onClearGrid={handleClearGrid}
+        onFillGridFromRecipe={handleFillGridFromRecipe}
+        onCraftFromGrid={handleCraftFromGrid}
+        onCraftRecipe={handleCraftRecipe}
+        onEatSlot={handleEatSlot}
+        onPlaceIntoFurnace={handlePlaceIntoFurnace}
+        onTakeFurnaceSlot={handleTakeFurnaceSlot}
+        onQuickLoadFurnaceSlot={handleQuickLoadFurnaceSlot}
+        onQuickLoadFurnaceRecipe={handleQuickLoadFurnaceRecipe}
+        onRespawn={handleRespawn}
+        onSetTime={handleSetTime}
+        onSelectMode={handleSelectMode}
+        onResume={() => engineRef.current?.setPhase('playing')}
+        onSaveNow={handleSaveNow}
+        onOpenWorlds={handleOpenWorlds}
+        onOpenNewWorld={handleOpenNewWorld}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onCloseSettings={() => setSettingsOpen(false)}
+        onResetEdits={handleResetEdits}
+        onReturnTitle={handleReturnTitle}
+        onOpenSingleplayer={handleOpenWorlds}
+        onSelectWorld={handleSelectWorld}
+        onPlayWorld={handlePlayWorld}
+        onCreateWorld={handleCreateWorld}
+        onRenameWorld={handleRenameWorld}
+        onDuplicateWorld={handleDuplicateWorld}
+        onDeleteWorld={handleDeleteWorld}
+        onCloseWorldModal={() => setWorldModalView(null)}
+        onGuiEvent={handleGuiEvent}
+        onClearPanorama={() => void engineRef.current?.clearPanorama()}
+        onChangeSettings={handleUpdateSettings}
+        onResetSettings={handleResetSettings}
+        onCloseInventory={() => engineRef.current?.setPhase('playing')}
+        onReload={() => window.location.reload()}
+      />
     </main>
   );
 }

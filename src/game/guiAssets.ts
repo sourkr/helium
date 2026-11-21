@@ -161,6 +161,12 @@ export const GUI_RECIPE_BOOK_BUTTON_SPRITES: GuiButtonSprites = {
   disabledSlice: 3,
 };
 
+/** 35x27 recipe book category tab backgrounds. */
+export const GUI_RECIPE_TAB_TEXTURES = {
+  normalUrl: findAssetByStem(GUI_RECIPE_BOOK_SPRITE_IMAGES, 'tab'),
+  selectedUrl: findAssetByStem(GUI_RECIPE_BOOK_SPRITE_IMAGES, 'tab_selected'),
+};
+
 /** 26x16 recipe book craftable filter toggle textures. */
 export const GUI_RECIPE_FILTER_TEXTURES = {
   disabledUrl: findAssetByStem(GUI_RECIPE_BOOK_SPRITE_IMAGES, 'filter_disabled'),
@@ -293,6 +299,15 @@ export function initGuiButtonTheme(): void {
     root.style.setProperty(
       '--mc-recipe-book-btn-highlighted',
       `url("${GUI_RECIPE_BOOK_BUTTON_SPRITES.highlightedUrl}")`,
+    );
+  }
+  if (GUI_RECIPE_TAB_TEXTURES.normalUrl) {
+    root.style.setProperty('--mc-recipe-tab', `url("${GUI_RECIPE_TAB_TEXTURES.normalUrl}")`);
+  }
+  if (GUI_RECIPE_TAB_TEXTURES.selectedUrl) {
+    root.style.setProperty(
+      '--mc-recipe-tab-selected',
+      `url("${GUI_RECIPE_TAB_TEXTURES.selectedUrl}")`,
     );
   }
   if (GUI_RECIPE_FILTER_TEXTURES.disabledUrl) {
