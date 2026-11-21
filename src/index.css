@@ -434,6 +434,24 @@
   opacity: 0.55;
 }
 
+/* The All tab uses the compass item icon in place of a text label. */
+.mc-recipe-tab-icon {
+  min-width: 28px;
+}
+
+.mc-recipe-tab-icon__img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.85));
+}
+
+.mc-recipe-tab-icon:not([data-active='true']) .mc-recipe-tab-icon__img {
+  opacity: 0.82;
+}
+
 /* Recipe output slots use the 25x25 craftable/uncraftable backgrounds. */
 .mc-recipe-slot {
   background-repeat: no-repeat;

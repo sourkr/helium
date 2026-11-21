@@ -722,17 +722,34 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
 
             {/* Category Tabs */}
             <div className="flex items-center gap-1.5">
-              {CRAFT_TABS.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  data-active={craftTab === cat ? 'true' : undefined}
-                  onClick={() => setCraftTab(cat)}
-                  className="mc-btn-sm flex-1 px-2.5 py-1.5 text-xs font-bold whitespace-nowrap cursor-pointer"
-                >
-                  {cat}
-                </button>
-              ))}
+              {CRAFT_TABS.map((cat) => {
+                const allTabIcon = cat === 'All' ? itemIcons[ItemType.Compass] : null;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    data-active={craftTab === cat ? 'true' : undefined}
+                    onClick={() => setCraftTab(cat)}
+                    title={cat}
+                    aria-label={cat}
+                    className={`mc-btn-sm flex flex-1 items-center justify-center px-2.5 py-1.5 text-xs font-bold whitespace-nowrap cursor-pointer${
+                      cat === 'All' ? ' mc-recipe-tab-icon' : ''
+                    }`}
+                  >
+                    {allTabIcon ? (
+                      <img
+                        src={allTabIcon}
+                        alt=""
+                        aria-hidden="true"
+                        className="mc-recipe-tab-icon__img"
+                        draggable={false}
+                      />
+                    ) : (
+                      cat
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
                 {/* Recipe Slots */}
